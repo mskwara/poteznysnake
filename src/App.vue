@@ -77,16 +77,17 @@ export default {
 
         if(this.snake[0].x == -1 || this.snake[0].x == this.mapSize || this.snake[0].y == -1 || this.snake[0].y == this.mapSize){ //za mapą
           this.alive = false;
-          this.gameOver();
         }
-        if(this.alive){
+        else {
           for(var i = this.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
             if(Object(this.snake[i]).y == this.snake[0].y && Object(this.snake[i]).x == this.snake[0].x){
               this.alive = false;
-              this.gameOver();
               break;
             }
           }
+        }
+        if(!this.alive){
+          this.gameOver();
         }
 
         if(this.snake[0].x == this.apple.x && this.snake[0].y == this.apple.y){
@@ -107,7 +108,7 @@ export default {
       }
     },
     gameOver(){
-      alert("GAME OVER");
+      alert("GAME OVER\nIlość punktów: "+this.points);
     },
     move(){
       if(this.isAppleEaten == true){
@@ -176,6 +177,10 @@ export default {
       ];
       this.snakeLength = 5;
       this.isAppleEaten = false;
+      this.points = 0;
+      this.speed = 250;
+      this.pointsFactor = 1;
+      this.putApple();
       this.update();
     },
     putApple(){
