@@ -1,7 +1,9 @@
 <template>
   <div id="app">
+    <p>Liczba punktów: {{points}}</p>
     <div id="map" v-bind:style="setMap()">
       <div class="snake_part" :key="part.id" v-for="part in snake" v-bind:style="partPosition(part)"></div>
+      <div class="apple" v-bind:style="applePosition()"></div>
     </div>
   </div>
 </template>
@@ -20,16 +22,25 @@ export default {
         {id: 4, x: 2, y: 6},
       ],
       alive: true,
-      nextId: 1,
+      nextId: 5,
       direction: "up",
       snakeLength: 5,
       speed: 250,
       mapSize: 15,
       alreadyTurned: false,
       nextMoves: [],
+      apple: {
+        x: 8,
+        y: 8
+      },
+      isAppleEaten: false,
+      points: 0,
+      pointsFactor: 1,
+      applesCount: 0,
     }
   },
   mounted: function(){
+    this.putApple();
     this.update();
     window.addEventListener("keyup", e => {
       if(e.keyCode == 37){  //left
@@ -52,6 +63,10 @@ export default {
       var positionStyle = {top: this.SIZE*part.y+'px', left: this.SIZE*part.x+'px'};
       return positionStyle;
     },
+    applePosition() {
+      var positionStyle = {top: this.SIZE*this.apple.y+'px', left: this.SIZE*this.apple.x+'px'};
+      return positionStyle;
+    },
     setMap(){
       var mapStyle = {width: this.mapSize*40+1+'px', height: this.mapSize*40+1+'px'};
       return mapStyle;
@@ -59,12 +74,13 @@ export default {
     update(){
       if(this.alive){
         this.move();
+
         if(this.snake[0].x == -1 || this.snake[0].x == this.mapSize || this.snake[0].y == -1 || this.snake[0].y == this.mapSize){ //za mapą
           this.alive = false;
           this.gameOver();
         }
         if(this.alive){
-          for(var i = this.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
+          for(var i = this.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
             if(Object(this.snake[i]).y == this.snake[0].y && Object(this.snake[i]).x == this.snake[0].x){
               this.alive = false;
               this.gameOver();
@@ -72,6 +88,18 @@ export default {
             }
           }
         }
+
+        if(this.snake[0].x == this.apple.x && this.snake[0].y == this.apple.y){
+          this.isAppleEaten = true;
+          this.points += 10*this.pointsFactor;
+          this.applesCount++;
+          if(this.applesCount%5 == 0){
+            this.pointsFactor += 1;
+            this.speed -= 20;
+          }
+          this.putApple();
+        }
+
         setTimeout(this.update, this.speed);
       }
       else {
@@ -82,6 +110,16 @@ export default {
       alert("GAME OVER");
     },
     move(){
+      if(this.isAppleEaten == true){
+        var newPart = {};
+        newPart.id = this.nextId;
+        newPart.x = Object(this.snake[this.snakeLength-1]).x;
+        newPart.y = Object(this.snake[this.snakeLength-1]).y;
+        this.snake.push(newPart);
+        this.snakeLength++;
+        this.nextId++;
+        this.isAppleEaten = false;
+      }
       for(var i = this.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
         Object(this.snake[i]).y = this.snake[i-1].y;
         Object(this.snake[i]).x = this.snake[i-1].x;
@@ -137,8 +175,27 @@ export default {
         {id: 4, x: 2, y: 6},
       ];
       this.snakeLength = 5;
+      this.isAppleEaten = false;
       this.update();
-    }
+    },
+    putApple(){
+      var foundPlaceForApple = false;
+      var x;
+      var y;
+      while(foundPlaceForApple != true){
+        foundPlaceForApple = true;
+        x = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
+        y = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
+        for(var i = this.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
+          if(Object(this.snake[i]).y == y && Object(this.snake[i]).x == x){   //jeśli złe miejsce
+            foundPlaceForApple = false;
+            break;
+          }
+        }
+      }
+      this.apple.x = x;
+      this.apple.y = y;
+    },
   }
 }
 </script>
@@ -168,5 +225,15 @@ export default {
   height: 40px;
   background-color: green;
   position: absolute;
+}
+.apple {
+  width: 40px;
+  height: 40px;
+  background-color: red;
+  position: absolute;
+}
+p {
+  font-family: Sui Generis;
+  font-size: 15pt;
 }
 </style>
