@@ -2,7 +2,7 @@
   <div id="app">
     <p>Liczba punktów: {{points}}</p>
     <div id="map" v-bind:style="setMap()">
-      <div class="snake_part" :key="part.id" v-for="part in snake" v-bind:style="partPosition(part)"></div>
+      <div :class="snakeClass(part.id)" :key="part.id" v-for="part in snake" v-bind:style="partPosition(part)"></div>
       <div class="apple" v-bind:style="applePosition()"></div>
     </div>
   </div>
@@ -25,8 +25,8 @@ export default {
       nextId: 5,
       direction: "up",
       snakeLength: 5,
-      speed: 250,
-      mapSize: 15,
+      speed: 200,
+      mapSize: 8,
       alreadyTurned: false,
       nextMoves: [],
       apple: {
@@ -67,6 +67,12 @@ export default {
       var positionStyle = {top: this.SIZE*this.apple.y+'px', left: this.SIZE*this.apple.x+'px'};
       return positionStyle;
     },
+    snakeClass(id){
+      if(id == 0){
+        return 'snake_head';
+      }
+      else return 'snake_part';
+    },
     setMap(){
       var mapStyle = {width: this.mapSize*40+1+'px', height: this.mapSize*40+1+'px'};
       return mapStyle;
@@ -94,10 +100,10 @@ export default {
           this.isAppleEaten = true;
           this.points += 10*this.pointsFactor;
           this.applesCount++;
-          if(this.applesCount%5 == 0){
-            this.pointsFactor += 1;
-            this.speed -= 20;
-          }
+          // if(this.applesCount%5 == 0){
+          //   this.pointsFactor += 1;
+          //   //this.speed -= 20;
+          // }
           this.putApple();
         }
 
@@ -191,7 +197,7 @@ export default {
         foundPlaceForApple = true;
         x = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
         y = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
-        for(var i = this.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
+        for(var i = this.snakeLength-1 ; i >= 0 ; i--){      //czy uderza w ogon
           if(Object(this.snake[i]).y == y && Object(this.snake[i]).x == x){   //jeśli złe miejsce
             foundPlaceForApple = false;
             break;
@@ -230,6 +236,16 @@ export default {
   height: 40px;
   background-color: green;
   position: absolute;
+  border:1px solid green;
+  border-radius: 15px;
+}
+.snake_head {
+  width: 40px;
+  height: 40px;
+  background-color: black;
+  position: absolute;
+  border:1px solid black;
+  border-radius: 15px;
 }
 .apple {
   width: 40px;
