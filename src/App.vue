@@ -1,26 +1,78 @@
 <template>
   <div id="app">
-    <p v-if="gameMode == 'coop'">Liczba punktów: {{snake1.points+snake2.points}}</p>
-    <p v-if="gameMode == 'battle'">Gracz 1: {{snake1.points}} punktów, Gracz 2: {{snake2.points}} punktów</p>
+    <p v-if="gameMode == 'coop'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
+    <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
     <div id="map" v-bind:style="setMap()">
+      <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
       <div :class="snakeClass(part.id)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
       <div :class="snakeClass(part.id)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div>
       <div class="apple" v-bind:style="applePosition()"></div>
     </div>
 
-    <md-button class="md-raised md-primary mode" @click="changeMode()">Teraz grane: {{gameMode}}</md-button>
+    <div class="menuPanel">
+      <md-list class="md-double-line">
+      <md-subheader>Ustawienia</md-subheader>
+
+      <md-list-item>
+        <md-icon class="md-primary">extension</md-icon>
+
+        <div class="md-list-item-text">
+          <span style="text-transform: uppercase">{{gameMode}}</span>
+          <span>Tryb gry</span>
+        </div>
+
+        <md-button class="md-primary md-raised" @click="changeMode()" :disabled="alive">Zmień</md-button>
+      </md-list-item>
+      <md-list-item>
+        <md-icon class="md-primary">photo_size_select_small</md-icon>
+
+        <div class="md-list-item-text">
+          <span>
+            <range-slider
+              class="slider"
+              :disabled="alive"
+              min="8"
+              max="16"
+              step="1"
+              v-model="mapSize">
+            </range-slider>{{mapSize}}</span>
+          <span>Rozmiar mapy</span>
+        </div>
+
+
+      </md-list-item>
+      <md-list-item>
+        <md-icon class="md-primary">cached</md-icon>
+
+        <div class="md-list-item-text">
+          <span>Restart</span>
+        </div>
+
+        <md-button class="md-primary md-raised" @click="reset()">Restart</md-button>
+      </md-list-item>
+
+    </md-list>
+
+    </div>
+
+
     <md-dialog-confirm
       :md-active.sync="gameOverAlert"
       md-title="GAME OVER"
       :md-content="alertText"
       md-confirm-text="Jeszcze raz"
       @md-confirm="reset" />
+
   </div>
 </template>
 
 <script>
+import RangeSlider from 'vue-range-slider'
+// you probably need to import built-in style
+import 'vue-range-slider/dist/vue-range-slider.css'
 
 export default {
+  components: {RangeSlider},
   data(){
     return {
       SIZE: 40,
@@ -59,14 +111,14 @@ export default {
           points: 0,
       },
       gameMode: "coop",
-      alive: true,
+      alive: false,
       speed: 200,
       mapSize: 10,
       apple: {
         x: 8,
         y: 8
       },
-
+      sleeping: 3,
       pointsFactor: 1,
       applesCount: 0,
       whyDied: "",
@@ -74,9 +126,10 @@ export default {
       alertText: "Koniec gry"
     }
   },
+
   mounted: function(){
+    this.sleep(3);
     this.putApple();
-    this.update();
     window.addEventListener("keyup", e => {
       if(e.keyCode == 37){  //left
         this.turn("left", this.snake1);
@@ -272,22 +325,22 @@ export default {
       }
     },
     reset(){
-      this.alive = true;
+      this.alive = false;
       this.snake1.direction = "right";
       this.snake2.direction = "right";
       this.snake1.parts = [
-        {id: 0, x: 6, y: 6},
-        {id: 1, x: 5, y: 6},
-        {id: 2, x: 4, y: 6},
-        {id: 3, x: 3, y: 6},
-        {id: 4, x: 2, y: 6},
+        {id: 0, x: 4, y: 6},
+        {id: 1, x: 3, y: 6},
+        {id: 2, x: 2, y: 6},
+        {id: 3, x: 1, y: 6},
+        {id: 4, x: 0, y: 6},
       ];
       this.snake2.parts = [
-        {id: 0, x: 6, y: 2},
-        {id: 1, x: 5, y: 2},
-        {id: 2, x: 4, y: 2},
-        {id: 3, x: 3, y: 2},
-        {id: 4, x: 2, y: 2},
+        {id: 0, x: 4, y: 2},
+        {id: 1, x: 3, y: 2},
+        {id: 2, x: 2, y: 2},
+        {id: 3, x: 1, y: 2},
+        {id: 4, x: 0, y: 2},
       ];
       this.snake1.snakeLength = 5;
       this.snake2.snakeLength = 5;
@@ -306,7 +359,7 @@ export default {
       this.snake2.nextMoves = [],
 
       this.putApple();
-      this.update();
+      this.sleep(3);
     },
     putApple(){
       var foundPlaceForApple = false;
@@ -332,6 +385,19 @@ export default {
       this.apple.x = x;
       this.apple.y = y;
     },
+    sleep(sec){
+      this.sleeping = sec;
+      if(this.sleeping > 0){
+        setTimeout(()=>{
+          this.sleeping-=1;
+          this.sleep(this.sleeping);
+        }, 1000);
+      }
+      if(this.sleeping == 0) {
+        this.alive = true;
+        this.update();
+      }
+    },
   }
 }
 </script>
@@ -348,9 +414,9 @@ body {
   color: #2c3e50;
   margin-top: 60px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 #map {
   background-size: 40px 40px;
@@ -387,5 +453,18 @@ p {
 }
 .md-button.mode {
   margin-top: 20px;
+}
+.sleepTimer {
+  font-size: 100pt;
+  font-family: Sui Generis;
+  color: yellow;
+  text-align: center;
+  padding-top: 40px;
+}
+.menuPanel {
+  width: 350px;
+}
+.range-slider-knob {
+  width: 20px !important;
 }
 </style>
