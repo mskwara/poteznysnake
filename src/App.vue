@@ -86,7 +86,7 @@ export default {
     return {
       SIZE: 40,
       snake1: {
-          snakeId: "0",
+          snakeId: "1",
           parts: [
             {id: 0, x: 4, y: 6},
             {id: 1, x: 3, y: 6},
@@ -104,7 +104,7 @@ export default {
           color: "green",
       },
       snake2: {
-          snakeId: "1",
+          snakeId: "2",
           parts: [
             {id: 0, x: 4, y: 2},
             {id: 1, x: 3, y: 2},
