@@ -1,11 +1,13 @@
 <template>
   <div id="app">
-    <p v-if="gameMode == 'coop'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
-    <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
+    <div class="scores">
+      <p v-if="gameMode == 'coop' || gameMode == 'single'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
+      <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
+    </div>
     <div id="map" v-bind:style="setMap()">
       <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
       <div :class="snakeClass(part.id)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
-      <div :class="snakeClass(part.id)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div>
+      <div v-if="gameMode != 'single'"><div :class="snakeClass(part.id)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div></div>
       <div class="apple" v-bind:style="applePosition()"></div>
     </div>
 
@@ -165,6 +167,9 @@ export default {
         this.gameMode = "battle";
       }
       else if(this.gameMode == "battle"){
+        this.gameMode = "single";
+      }
+      else if(this.gameMode == "single"){
         this.gameMode = "coop";
       }
     },
@@ -239,16 +244,16 @@ export default {
     update(){
       if(this.alive){
         this.move(this.snake1);
-        this.move(this.snake2);
+        if(this.gameMode != "single")   this.move(this.snake2);
         this.checkSnakeAlive(this.snake1);
-        this.checkSnakeAlive(this.snake2);
-        this.checkSnakeEatSnake();
+        if(this.gameMode != "single")   this.checkSnakeAlive(this.snake2);
+        if(this.gameMode != "single")   this.checkSnakeEatSnake();
 
         if(!this.alive){
           this.gameOver();
         }
         this.checkAppleEaten(this.snake1);
-        this.checkAppleEaten(this.snake2);
+        if(this.gameMode != "single")   this.checkAppleEaten(this.snake2);
 
         setTimeout(this.update, this.speed);
       }
@@ -375,10 +380,12 @@ export default {
             break;
           }
         }
-        for(var k = this.snake2.snakeLength-1 ; k >= 0 ; k--){
-          if(Object(this.snake2.parts[k]).y == y && Object(this.snake2.parts[k]).x == x){   //jeśli złe miejsce
-            foundPlaceForApple = false;
-            break;
+        if(this.gameMode != "single"){
+          for(var k = this.snake2.snakeLength-1 ; k >= 0 ; k--){
+            if(Object(this.snake2.parts[k]).y == y && Object(this.snake2.parts[k]).x == x){   //jeśli złe miejsce
+              foundPlaceForApple = false;
+              break;
+            }
           }
         }
       }
@@ -466,5 +473,8 @@ p {
 }
 .range-slider-knob {
   width: 20px !important;
+}
+.scores {
+  width: 300px;
 }
 </style>
