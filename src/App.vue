@@ -6,8 +6,8 @@
     </div>
     <div id="map" v-bind:style="setMap()">
       <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
-      <div :class="snakeClass(part.id)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
-      <div v-if="gameMode != 'single'"><div :class="snakeClass(part.id)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div></div>
+      <div :class="snakeClass(part.id, snake1)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
+      <div v-if="gameMode != 'single'"><div :class="snakeClass(part.id, snake2)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div></div>
       <div class="apple" v-bind:style="applePosition()"></div>
     </div>
 
@@ -65,6 +65,13 @@
       md-confirm-text="Jeszcze raz"
       @md-confirm="reset" />
 
+    <md-dialog-confirm
+      :md-active.sync="victory"
+      md-title="WYGRAŁEŚ"
+      md-content="Jesteś mistrzem tej gry! Gratulacje!"
+      md-confirm-text="Jeszcze raz"
+      @md-confirm="reset" />
+
   </div>
 </template>
 
@@ -94,6 +101,7 @@ export default {
           nextMoves: [],
           isAppleEaten: false,
           points: 0,
+          color: "green",
       },
       snake2: {
           snakeId: "1",
@@ -111,6 +119,7 @@ export default {
           nextMoves: [],
           isAppleEaten: false,
           points: 0,
+          color: "orange",
       },
       gameMode: "coop",
       alive: false,
@@ -125,7 +134,8 @@ export default {
       applesCount: 0,
       whyDied: "",
       gameOverAlert: false,
-      alertText: "Koniec gry"
+      alertText: "Koniec gry",
+      victory: false,
     }
   },
 
@@ -181,11 +191,20 @@ export default {
       var positionStyle = {top: this.SIZE*this.apple.y+'px', left: this.SIZE*this.apple.x+'px'};
       return positionStyle;
     },
-    snakeClass(id){
-      if(id == 0){
-        return 'snake_head';
+    snakeClass(id, snake){
+      if(snake.color == "green"){
+        if(id == 0){
+          return 'snake_head';
+        }
+        else return 'snake_part1';
       }
-      else return 'snake_part';
+      else if(snake.color == "orange"){
+        if(id == 0){
+          return 'snake_head';
+        }
+        else return 'snake_part2';
+      }
+
     },
     setMap(){
       var mapStyle = {width: this.mapSize*40+1+'px', height: this.mapSize*40+1+'px'};
@@ -234,10 +253,10 @@ export default {
         snake.isAppleEaten = true;
         snake.points += 10*this.pointsFactor;
         this.applesCount++;
-        // if(this.applesCount%5 == 0){
-        //   this.pointsFactor += 1;
-        //   //this.speed -= 20;
-        // }
+        if(this.applesCount == this.mapSize*this.mapSize-5){
+          this.victory = true;
+          this.alive = false;
+        }
         this.putApple();
       }
     },
@@ -331,6 +350,7 @@ export default {
     },
     reset(){
       this.alive = false;
+      this.victory = false;
       this.snake1.direction = "right";
       this.snake2.direction = "right";
       this.snake1.parts = [
@@ -356,12 +376,13 @@ export default {
       this.speed = 200;
       this.pointsFactor = 1;
 
-      this.snake1.nextId = 5,
-      this.snake2.nextId = 5,
-      this.snake1.alreadyTurned = false,
-      this.snake2.alreadyTurned = false,
-      this.snake1.nextMoves = [],
-      this.snake2.nextMoves = [],
+      this.snake1.nextId = 5;
+      this.snake2.nextId = 5;
+      this.snake1.alreadyTurned = false;
+      this.snake2.alreadyTurned = false;
+      this.snake1.nextMoves = [];
+      this.snake2.nextMoves = [];
+      this.applesCount = 0;
 
       this.putApple();
       this.sleep(3);
@@ -432,12 +453,20 @@ body {
     linear-gradient(to bottom, grey 1px, transparent 1px);
     position: relative;
 }
-.snake_part {
+.snake_part1 {
   width: 40px;
   height: 40px;
   background-color: green;
   position: absolute;
   border:1px solid green;
+  border-radius: 15px;
+}
+.snake_part2 {
+  width: 40px;
+  height: 40px;
+  background-color: orange;
+  position: absolute;
+  border:1px solid orange;
   border-radius: 15px;
 }
 .snake_head {
