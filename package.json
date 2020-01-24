@@ -8,7 +8,7 @@
     "lint": "vue-cli-service lint",
     "deploy": "git push -f heroku master",
     "heroku-postbuild": "npm run build",
-    "start": "http-server dist/ -d false -g"
+    "start": "http-server public/ -d false -g"
   },
   "dependencies": {
     "core-js": "^3.4.4",
