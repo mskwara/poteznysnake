@@ -121,7 +121,7 @@ export default {
           points: 0,
           color: "orange",
       },
-      gameMode: "coop",
+      gameMode: "single",
       alive: false,
       speed: 200,
       mapSize: 10,
