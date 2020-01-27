@@ -1,0 +1,14 @@
+{
+    "name": "snake/snake",
+    "authors": [
+        {
+            "name": "Michał Skwara",
+            "email": "michalon2000@gmail.com"
+        }
+    ],
+    "require": {
+        "slim/slim": "^3",
+        "ext-json": "*",
+        "ext-sqlite3": "*"
+    }
+}
