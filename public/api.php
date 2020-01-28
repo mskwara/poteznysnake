@@ -16,7 +16,7 @@ $app->get(
 
 
 $app->get(
-    '/scoreboard',
+    '/api/scoreboard',
     function (Request $request, Response $response, array $args) {
 
         class MyDB extends SQLite3 {
