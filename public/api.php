@@ -42,7 +42,7 @@ $app->get(
 );
 
 $app->post(
-    '/addscore',
+    '/api/addscore',
     function (Request $request, Response $response, array $args) {
 
       class MyDB extends SQLite3 {
