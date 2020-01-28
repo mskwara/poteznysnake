@@ -7,7 +7,7 @@ import VueResource from "vue-resource";
 
 
 Vue.use(VueResource);
-// Vue.http.options.root = '/api';
+Vue.http.options.root = '/api';
 
 
 Vue.use(VueMaterial)
