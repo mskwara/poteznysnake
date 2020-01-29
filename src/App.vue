@@ -86,7 +86,9 @@
           md-title="WYGRAŁEŚ"
           md-content="Jesteś mistrzem tej gry! Gratulacje!"
           md-confirm-text="Jeszcze raz"
-          @md-confirm="reset" />
+          md-cancel-text="Chcę zapisać wynik"
+          @md-confirm="reset"
+          @md-cancel="wannaSave()" />
 
         <md-dialog-prompt
           :md-active.sync="saving"
@@ -241,7 +243,9 @@
             this.user.name = "";
             this.user.score = 0;
             this.user.mode = "";
-
+            this.$http.get('scoreboard').then(response => {
+              this.ranking = response.body;
+            });
           },
           changeMode(){
             if(this.gameMode == "coop"){
