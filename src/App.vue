@@ -8,9 +8,10 @@
       </div>
       <div id="map" v-bind:style="setMap()">
         <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
+        <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">PAUSE</h6>
         <div :class="snakeClass(part.id, snake1)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
         <div v-if="gameMode != 'single'"><div :class="snakeClass(part.id, snake2)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div></div>
-        <div class="apple" v-bind:style="applePosition(apple)"></div>
+        <div class="apple" v-bind:style="applePosition(apple)" v-if="apple.visible == true"></div>
         <div v-if="animal.visible == true"><div class="animal" v-bind:style="applePosition(animal)"></div></div>
       </div>
 
@@ -90,581 +91,600 @@
           @md-confirm="reset"
           @md-cancel="wannaSave()" />
 
-        <md-dialog-prompt
-          :md-active.sync="saving"
-          v-model="user.name"
-          md-title="Zapisz swój wynik"
-          md-input-maxlength="15"
-          md-input-placeholder="Podaj swój nick..."
-          md-cancel-text="Powrót"
-          md-confirm-text="Zapisz"
-          @md-confirm="postScore" />
+          <md-dialog-prompt
+            :md-active.sync="saving"
+            v-model="user.name"
+            md-title="Zapisz swój wynik"
+            md-input-maxlength="15"
+            md-input-placeholder="Podaj swój nick..."
+            md-cancel-text="Powrót"
+            md-confirm-text="Zapisz"
+            @md-confirm="postScore" />
 
-        </div>
-      </template>
+          </div>
+        </template>
 
-      <script>
-      import RangeSlider from 'vue-range-slider'
-      import Scoreboard from './Scoreboard.vue'
-      // you probably need to import built-in style
-      import 'vue-range-slider/dist/vue-range-slider.css'
+        <script>
+        import RangeSlider from 'vue-range-slider'
+        import Scoreboard from './Scoreboard.vue'
+        // you probably need to import built-in style
+        import 'vue-range-slider/dist/vue-range-slider.css'
 
-      export default {
-        components: {RangeSlider, Scoreboard},
-        data(){
-          return {
-            SIZE: 40,
-            duration: 3000,
-            ranking: [],
-            snackbarError: false,
-            user: {
-              name: "",
-              score: 0,
-              mode: ""
-            },
-            saving: false,
-            snake1: {
-              snakeId: "1",
-              parts: [
-                {id: 0, x: 4, y: 6},
-                {id: 1, x: 3, y: 6},
-                {id: 2, x: 2, y: 6},
-                {id: 3, x: 1, y: 6},
-                {id: 4, x: 0, y: 6},
-              ],
-              nextId: 5,
-              direction: "right",
-              snakeLength: 5,
-              alreadyTurned: false,
-              nextMoves: [],
-              isAppleEaten: false,
-              isAnimalEaten: false,
-              points: 0,
-              color: "green",
-            },
-            snake2: {
-              snakeId: "2",
-              parts: [
-                {id: 0, x: 4, y: 2},
-                {id: 1, x: 3, y: 2},
-                {id: 2, x: 2, y: 2},
-                {id: 3, x: 1, y: 2},
-                {id: 4, x: 0, y: 2},
-              ],
-              nextId: 5,
-              direction: "right",
-              snakeLength: 5,
-              alreadyTurned: false,
-              nextMoves: [],
-              isAppleEaten: false,
-              isAnimalEaten: false,
-              points: 0,
-              color: "orange",
-            },
-            gameMode: "single",
-            alive: false,
-            speed: 200,
-            mapSize: 10,
-            apple: {
-              x: 8,
-              y: 8
-            },
-            animal: {
-              x: -2,
-              y: -2,
-              value: 15,
-              visible: false,
-              eaten: false,
-              wasDisplayed: false
-            },
-            sleeping: 3,
-            pointsFactor: 1,
-            applesCount: 0,
-            whyDied: "",
-            gameOverAlert: false,
-            alertText: "Koniec gry",
-            victory: false,
-            scoreboard: "",
-          }
-        },
-
-        mounted: function(){
-          this.$http.get('scoreboard').then(response => {
-            this.ranking = response.body;
-          });
-          this.sleep(3);
-          this.putApple("apple");
-          window.addEventListener("keyup", e => {
-            if(e.keyCode == 37){  //left
-              this.turn("left", this.snake1);
+        export default {
+          components: {RangeSlider, Scoreboard},
+          data(){
+            return {
+              SIZE: 40,
+              duration: 3000,
+              ranking: [],
+              snackbarError: false,
+              pause: false,
+              user: {
+                name: "",
+                score: 0,
+                mode: ""
+              },
+              saving: false,
+              snake1: {
+                snakeId: "1",
+                parts: [
+                  {id: 0, x: 4, y: 6},
+                  {id: 1, x: 3, y: 6},
+                  {id: 2, x: 2, y: 6},
+                  {id: 3, x: 1, y: 6},
+                  {id: 4, x: 0, y: 6},
+                ],
+                nextId: 5,
+                direction: "right",
+                snakeLength: 5,
+                alreadyTurned: false,
+                nextMoves: [],
+                isAppleEaten: false,
+                isAnimalEaten: false,
+                points: 0,
+                color: "green",
+              },
+              snake2: {
+                snakeId: "2",
+                parts: [
+                  {id: 0, x: 4, y: 2},
+                  {id: 1, x: 3, y: 2},
+                  {id: 2, x: 2, y: 2},
+                  {id: 3, x: 1, y: 2},
+                  {id: 4, x: 0, y: 2},
+                ],
+                nextId: 5,
+                direction: "right",
+                snakeLength: 5,
+                alreadyTurned: false,
+                nextMoves: [],
+                isAppleEaten: false,
+                isAnimalEaten: false,
+                points: 0,
+                color: "orange",
+              },
+              gameMode: "single",
+              alive: false,
+              speed: 200,
+              mapSize: 10,
+              apple: {
+                x: 8,
+                y: 8,
+                visible: false
+              },
+              animal: {
+                x: -2,
+                y: -2,
+                value: 15,
+                visible: false,
+                eaten: false,
+                wasDisplayed: false
+              },
+              sleeping: 3,
+              pointsFactor: 1,
+              applesCount: 0,
+              whyDied: "",
+              gameOverAlert: false,
+              alertText: "Koniec gry",
+              victory: false,
+              scoreboard: "",
             }
-            if(e.keyCode == 38){  //up
-              this.turn("up", this.snake1);
-            }
-            if(e.keyCode == 39){  //right
-              this.turn("right", this.snake1);
-            }
-            if(e.keyCode == 40){  //down
-              this.turn("down", this.snake1);
-            }
-            //snake2
-            if(e.keyCode == 65){  //left
-              this.turn("left", this.snake2);
-            }
-            if(e.keyCode == 87){  //up
-              this.turn("up", this.snake2);
-            }
-            if(e.keyCode == 68){  //right
-              this.turn("right", this.snake2);
-            }
-            if(e.keyCode == 83){  //down
-              this.turn("down", this.snake2);
-            }
-          });
-
-        },
-        methods: {
-          wannaSave(){
-            if(this.snake1.points + this.snake2.points != 0 && this.gameMode != 'battle') this.saving=true;
-            else this.snackbarError = true;
           },
-          saveBtn(){
-            this.saving = true;
-          },
-          postScore(){
-            if(this.gameMode == "single"){
-              this.user.score = this.snake1.points;
-            }
-            if(this.gameMode == "coop"){
-              this.user.score = this.snake1.points + this.snake2.points;
-            }
-            this.user.mode = this.gameMode;
-            this.$http.post('addscore', this.user);
-            this.user.name = "";
-            this.user.score = 0;
-            this.user.mode = "";
+
+          mounted: function(){
             this.$http.get('scoreboard').then(response => {
               this.ranking = response.body;
             });
-          },
-          changeMode(){
-            if(this.gameMode == "coop"){
-              this.gameMode = "battle";
-            }
-            else if(this.gameMode == "battle"){
-              this.gameMode = "single";
-            }
-            else if(this.gameMode == "single"){
-              this.gameMode = "coop";
-            }
-          },
-          partPosition(part) {
-            var positionStyle = {top: this.SIZE*part.y+'px', left: this.SIZE*part.x+'px'};
-            return positionStyle;
-          },
-          applePosition(apple) {
-            var positionStyle = {top: this.SIZE*apple.y+'px', left: this.SIZE*apple.x+'px'};
-            return positionStyle;
-          },
-          snakeClass(id, snake){
-            if(snake.color == "green"){
-              if(id == 0){
-                return 'snake_head';
+            this.sleep(3);
+            window.addEventListener("keyup", e => {
+              if(e.keyCode == 80){  //left
+                this.pause == false ? this.pause = true : this.pause = false;
               }
-              else return 'snake_part1';
-            }
-            else if(snake.color == "orange"){
-              if(id == 0){
-                return 'snake_head';
+              if(this.pause == false){
+                if(e.keyCode == 37){  //left
+                  this.turn("left", this.snake1);
+                }
+                if(e.keyCode == 38){  //up
+                  this.turn("up", this.snake1);
+                }
+                if(e.keyCode == 39){  //right
+                  this.turn("right", this.snake1);
+                }
+                if(e.keyCode == 40){  //down
+                  this.turn("down", this.snake1);
+                }
+                //snake2
+                if(e.keyCode == 65){  //left
+                  this.turn("left", this.snake2);
+                }
+                if(e.keyCode == 87){  //up
+                  this.turn("up", this.snake2);
+                }
+                if(e.keyCode == 68){  //right
+                  this.turn("right", this.snake2);
+                }
+                if(e.keyCode == 83){  //down
+                  this.turn("down", this.snake2);
+                }
               }
-              else return 'snake_part2';
-            }
+            });
 
           },
-          setMap(){
-            var mapStyle = {width: this.mapSize*40+1+'px', height: this.mapSize*40+1+'px'};
-            return mapStyle;
-          },
-          checkSnakeAlive(snake){
-            if(snake.parts[0].x == -1
-              || snake.parts[0].x == this.mapSize
-              || snake.parts[0].y == -1
-              || snake.parts[0].y == this.mapSize){ //za mapą
-                this.alive = false;
-                this.whyDied = snake.snakeId+" za mapą";
-              }
-              else {
-                for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
-                  if(Object(snake.parts[i]).y == snake.parts[0].y && Object(snake.parts[i]).x == snake.parts[0].x){
-                    this.alive = false;
-                    this.whyDied = snake.snakeId+" sie sam zjadł";
-                    break;
-                  }
-                }
-              }
+methods: {
+  wannaSave(){
+    if(this.snake1.points + this.snake2.points != 0 && this.gameMode != 'battle') this.saving=true;
+    else this.snackbarError = true;
+  },
+  saveBtn(){
+    this.saving = true;
+  },
+  postScore(){
+    if(this.gameMode == "single"){
+      this.user.score = this.snake1.points;
+    }
+    if(this.gameMode == "coop"){
+      this.user.score = this.snake1.points + this.snake2.points;
+    }
+    this.user.mode = this.gameMode;
+    this.$http.post('addscore', this.user);
+    this.user.name = "";
+    this.user.score = 0;
+    this.user.mode = "";
+    this.$http.get('scoreboard').then(response => {
+      this.ranking = response.body;
+    });
+  },
+  changeMode(){
+    if(this.gameMode == "coop"){
+      this.gameMode = "battle";
+    }
+    else if(this.gameMode == "battle"){
+      this.gameMode = "single";
+    }
+    else if(this.gameMode == "single"){
+      this.gameMode = "coop";
+    }
+  },
+  partPosition(part) {
+    var positionStyle = {top: this.SIZE*part.y+'px', left: this.SIZE*part.x+'px'};
+    return positionStyle;
+  },
+  applePosition(apple) {
+    var positionStyle = {top: this.SIZE*apple.y+'px', left: this.SIZE*apple.x+'px'};
+    return positionStyle;
+  },
+  snakeClass(id, snake){
+    if(snake.color == "green"){
+      if(id == 0){
+        return 'snake_head';
+      }
+      else return 'snake_part1';
+    }
+    else if(snake.color == "orange"){
+      if(id == 0){
+        return 'snake_head';
+      }
+      else return 'snake_part2';
+    }
 
-            },
-            checkSnakeEatSnake(){
-              if(this.snake1.parts[0].x == this.snake2.parts[0].x && this.snake1.parts[0].y == this.snake2.parts[0].y){
-                this.alive = false;
-                this.whyDied = "Czołówka!!";
-                return;
-              }
-              for(var k = 0 ; k < this.snake2.snakeLength ; k++){   //czy snaki sie same uderzaja
-                if(this.snake1.parts[0].x == this.snake2.parts[k].x && this.snake1.parts[0].y == this.snake2.parts[k].y){
-                  this.alive = false;
-                  this.whyDied = "Gracz 1 sie wyłożył";
-                }
-              }
-              for(var j = 0 ; j < this.snake1.snakeLength ; j++){   //czy snaki sie same uderzaja
-                if(this.snake2.parts[0].x == this.snake1.parts[j].x && this.snake2.parts[0].y == this.snake1.parts[j].y){
-                  this.alive = false;
-                  this.whyDied = "Gracz 2 sie wyłożył";
-                }
-              }
-            },
-            checkAppleEaten(snake){
-              if(snake.parts[0].x == this.apple.x && snake.parts[0].y == this.apple.y){
-                snake.isAppleEaten = true;
-                snake.points += 10*this.pointsFactor;
-                this.applesCount++;
-                if(this.applesCount == this.mapSize*this.mapSize-5){
-                  this.victory = true;
-                  this.alive = false;
-                }
-                this.putApple("apple");
-              }
-            },
-            checkAnimalEaten(snake){
-              if(snake.parts[0].x == this.animal.x && snake.parts[0].y == this.animal.y){
-                snake.isAnimalEaten = true;
-                snake.points += this.animal.value*this.pointsFactor;
-                this.applesCount++;
-                if(this.applesCount == this.mapSize*this.mapSize-5){
-                  this.victory = true;
-                  this.alive = false;
-                }
-              }
-            },
-            update(){
-              if(this.alive){
-                this.move(this.snake1);
-                if(this.gameMode != "single")   this.move(this.snake2);
-                this.checkSnakeAlive(this.snake1);
-                if(this.gameMode != "single")   this.checkSnakeAlive(this.snake2);
-                if(this.gameMode != "single")   this.checkSnakeEatSnake();
-
-                if(!this.alive){
-                  this.gameOver();
-                }
-                this.checkAppleEaten(this.snake1);
-                this.checkAnimalEaten(this.snake1);
-                if(this.gameMode != "single"){
-                  this.checkAppleEaten(this.snake2);
-                  this.checkAnimalEaten(this.snake2);
-                }
-
-                // if(this.applesCount != 0 && this.applesCount%3 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
-                //   this.animal.wasDisplayed = true;
-                //   this.putApple("animal");
-                //   var time = 3;
-                //   this.controlAnimalTime(time);
-                // }
-
-                setTimeout(this.update, this.speed);
-              }
-            },
-            controlAnimalTime(time){
-              if(time > 0){
-                if(this.snake1.isAnimalEaten == true || this.snake2.isAnimalEaten == true){
-                  this.animal.visible = false;
-                  this.animal.x = -2;
-                  this.animal.y = -2;
-                }
-                setTimeout(()=>{
-                  time-=1;
-                  this.controlAnimalTime(time);
-                }, 1000);
-              }
-              if(time == 0) {
-                this.animal.x = -2;
-                this.animal.y = -2;
-                this.animal.visible = false;
-              }
-            },
-            gameOver(){
-              this.alertText = "Koniec gry. Wynik: "+this.snake1.points;
-              if(this.gameMode == "battle"){
-                if(this.snake1.points > this.snake2.points){
-                  this.alertText+=". Wygrywa gracz 1";
-                }
-                if(this.snake1.points < this.snake2.points){
-                  this.alertText+=". Wygrywa gracz 2";
-                }
-                if(this.snake1.points == this.snake2.points){
-                  this.alertText+=". Remis";
-                }
-              }
-                this.gameOverAlert = true;
-            },
-            move(snake){
-              if(snake.isAppleEaten == true || snake.isAnimalEaten == true){
-                var newPart = {};
-                newPart.id = snake.nextId;
-                newPart.x = Object(snake.parts[snake.snakeLength-1]).x;
-                newPart.y = Object(snake.parts[snake.snakeLength-1]).y;
-                snake.parts.push(newPart);
-                snake.snakeLength++;
-                snake.nextId++;
-                if(snake.isAppleEaten == true){
-                  snake.isAppleEaten = false;
-
-                }
-                else if(snake.isAnimalEaten == true){
-                  snake.isAnimalEaten = false;
-                  this.animal.x = -2;
-                  this.animal.y = -2;
-                  this.animal.visible = false;
-                }
-                this.animal.wasDisplayed = false;
-              }
-              for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
-                Object(snake.parts[i]).y = snake.parts[i-1].y;
-                Object(snake.parts[i]).x = snake.parts[i-1].x;
-              }
-              if(snake.nextMoves.length != 0){
-                if(snake.nextMoves[0] == "up"){     //ruchy głowy
-                  snake.parts[0].y--;
-                }
-                else if(snake.nextMoves[0] == "right"){
-                  snake.parts[0].x++;
-                }
-                else if(snake.nextMoves[0] == "down"){
-                  snake.parts[0].y++;
-                }
-                else if(snake.nextMoves[0] == "left"){
-                  snake.parts[0].x--;
-                }
-                snake.nextMoves.splice(0,1);
-              }
-              else {
-                if(snake.direction == "up"){     //ruchy głowy
-                  snake.parts[0].y--;
-                }
-                else if(snake.direction == "right"){
-                  snake.parts[0].x++;
-                }
-                else if(snake.direction == "down"){
-                  snake.parts[0].y++;
-                }
-                else if(snake.direction   == "left"){
-                  snake.parts[0].x--;
-                }
-              }
-            },
-            turn(dir, snake){
-              if(snake.direction == "up" && dir == "down") return;
-              if(snake.direction == "right" && dir == "left") return;
-              if(snake.direction == "down" && dir == "up") return;
-              if(snake.direction == "left" && dir == "right") return;
-              if(snake.nextMoves.length < 2){
-                snake.direction = dir;
-                snake.nextMoves.push(dir);
-              }
-            },
-            reset(){
-              this.alive = false;
-              this.victory = false;
-              this.snake1.direction = "right";
-              this.snake2.direction = "right";
-              this.snake1.parts = [
-                {id: 0, x: 4, y: 6},
-                {id: 1, x: 3, y: 6},
-                {id: 2, x: 2, y: 6},
-                {id: 3, x: 1, y: 6},
-                {id: 4, x: 0, y: 6},
-              ];
-              this.snake2.parts = [
-                {id: 0, x: 4, y: 2},
-                {id: 1, x: 3, y: 2},
-                {id: 2, x: 2, y: 2},
-                {id: 3, x: 1, y: 2},
-                {id: 4, x: 0, y: 2},
-              ];
-              this.snake1.snakeLength = 5;
-              this.snake2.snakeLength = 5;
-              this.snake1.isAppleEaten = false;
-              this.snake2.isAppleEaten = false;
-              this.snake1.isAnimalEaten = false;
-              this.snake2.isAnimalEaten = false;
-              this.snake1.points = 0;
-              this.snake2.points = 0;
-              this.speed = 200;
-              this.pointsFactor = 1;
-
-              this.snake1.nextId = 5;
-              this.snake2.nextId = 5;
-              this.snake1.alreadyTurned = false;
-              this.snake2.alreadyTurned = false;
-              this.snake1.nextMoves = [];
-              this.snake2.nextMoves = [];
-              this.applesCount = 0;
-
-              this.putApple("apple");
-              this.sleep(3);
-            },
-            putApple(obj){
-              var foundPlaceForApple = false;
-              var x;
-              var y;
-              while(foundPlaceForApple != true){
-                foundPlaceForApple = true;
-                x = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
-                y = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
-                for(var i = this.snake1.snakeLength-1 ; i >= 0 ; i--){
-                  if(Object(this.snake1.parts[i]).y == y && Object(this.snake1.parts[i]).x == x){   //jeśli złe miejsce
-                    foundPlaceForApple = false;
-                    break;
-                  }
-                }
-                if(this.gameMode != "single"){
-                  for(var k = this.snake2.snakeLength-1 ; k >= 0 ; k--){
-                    if(Object(this.snake2.parts[k]).y == y && Object(this.snake2.parts[k]).x == x){   //jeśli złe miejsce
-                      foundPlaceForApple = false;
-                      break;
-                    }
-                  }
-                }
-                if(obj == "apple" && x == this.animal.x && y == this.animal.y){
-                  foundPlaceForApple = false;
-                }
-                else if(obj == "animal" && x == this.apple.x && y == this.apple.y){
-                  foundPlaceForApple = false;
-                }
-              }
-              if(obj == "apple"){
-                this.apple.x = x;
-                this.apple.y = y;
-              }
-              else if(obj == "animal"){
-                this.animal.x = x;
-                this.animal.y = y;
-                this.animal.value += 15;
-                this.animal.visible = true;
-                this.animal.wasDisplayed = true;
-              }
-
-            },
-            sleep(sec){
-              this.sleeping = sec;
-              if(this.sleeping > 0){
-                setTimeout(()=>{
-                  this.sleeping-=1;
-                  this.sleep(this.sleeping);
-                }, 1000);
-              }
-              if(this.sleeping == 0) {
-                this.alive = true;
-                this.update();
-              }
-            },
+  },
+  setMap(){
+    var mapStyle = {width: this.mapSize*40+1+'px', height: this.mapSize*40+1+'px'};
+    return mapStyle;
+  },
+  checkSnakeAlive(snake){
+    if(snake.parts[0].x == -1
+      || snake.parts[0].x == this.mapSize
+      || snake.parts[0].y == -1
+      || snake.parts[0].y == this.mapSize){ //za mapą
+        this.alive = false;
+        this.whyDied = snake.snakeId+" za mapą";
+      }
+      else {
+        for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
+          if(Object(snake.parts[i]).y == snake.parts[0].y && Object(snake.parts[i]).x == snake.parts[0].x){
+            this.alive = false;
+            this.whyDied = snake.snakeId+" sie sam zjadł";
+            break;
           }
         }
-      </script>
+      }
 
-      <style>
-      body {
-        overflow: hidden;
+    },
+    checkSnakeEatSnake(){
+      if(this.snake1.parts[0].x == this.snake2.parts[0].x && this.snake1.parts[0].y == this.snake2.parts[0].y){
+        this.alive = false;
+        this.whyDied = "Czołówka!!";
+        return;
       }
-      #app {
-        font-family: 'Avenir', Helvetica, Arial, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-align: center;
-        color: #2c3e50;
-        margin-top: 60px;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
+      for(var k = 0 ; k < this.snake2.snakeLength ; k++){   //czy snaki sie same uderzaja
+        if(this.snake1.parts[0].x == this.snake2.parts[k].x && this.snake1.parts[0].y == this.snake2.parts[k].y){
+          this.alive = false;
+          this.whyDied = "Gracz 1 sie wyłożył";
+        }
+      }
+      for(var j = 0 ; j < this.snake1.snakeLength ; j++){   //czy snaki sie same uderzaja
+        if(this.snake2.parts[0].x == this.snake1.parts[j].x && this.snake2.parts[0].y == this.snake1.parts[j].y){
+          this.alive = false;
+          this.whyDied = "Gracz 2 sie wyłożył";
+        }
+      }
+    },
+    checkAppleEaten(snake){
+      if(snake.parts[0].x == this.apple.x && snake.parts[0].y == this.apple.y){
+        snake.isAppleEaten = true;
+        snake.points += 10*this.pointsFactor;
+        this.applesCount++;
+        if(this.applesCount == this.mapSize*this.mapSize-5){
+          this.victory = true;
+          this.alive = false;
+        }
+        this.putApple("apple");
+      }
+    },
+    checkAnimalEaten(snake){
+      if(snake.parts[0].x == this.animal.x && snake.parts[0].y == this.animal.y){
+        snake.isAnimalEaten = true;
+        snake.points += this.animal.value*this.pointsFactor;
+        this.applesCount++;
+        if(this.applesCount == this.mapSize*this.mapSize-5){
+          this.victory = true;
+          this.alive = false;
+        }
+      }
+    },
+    update(){
+      if(this.alive){
+        if(!this.pause){
+          this.move(this.snake1);
+          if(this.gameMode != "single")   this.move(this.snake2);
+          this.checkSnakeAlive(this.snake1);
+          if(this.gameMode != "single")   this.checkSnakeAlive(this.snake2);
+          if(this.gameMode != "single")   this.checkSnakeEatSnake();
 
-        flex-wrap: wrap;
+          if(!this.alive){
+            this.gameOver();
+          }
+          this.checkAppleEaten(this.snake1);
+          this.checkAnimalEaten(this.snake1);
+          if(this.gameMode != "single"){
+            this.checkAppleEaten(this.snake2);
+            this.checkAnimalEaten(this.snake2);
+          }
+
+          // if(this.applesCount != 0 && this.applesCount%3 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
+          //   this.animal.wasDisplayed = true;
+          //   this.putApple("animal");
+          //   var time = 3;
+          //   this.controlAnimalTime(time);
+          // }
+        }
+        setTimeout(this.update, this.speed);
       }
-      #map {
-        background-size: 40px 40px;
-        background-image:
-        linear-gradient(to right, grey 1px, transparent 1px),
-        linear-gradient(to bottom, grey 1px, transparent 1px);
-        position: relative;
+
+    },
+    controlAnimalTime(time){
+      if(time > 0){
+        if(this.snake1.isAnimalEaten == true || this.snake2.isAnimalEaten == true){
+          this.animal.visible = false;
+          this.animal.x = -2;
+          this.animal.y = -2;
+        }
+        setTimeout(()=>{
+          time-=1;
+          this.controlAnimalTime(time);
+        }, 1000);
       }
-      .mainView {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
-        flex-wrap: wrap;
+      if(time == 0) {
+        this.animal.x = -2;
+        this.animal.y = -2;
+        this.animal.visible = false;
       }
-      .snake_part1 {
-        width: 40px;
-        height: 40px;
-        background-color: green;
-        position: absolute;
-        border:1px solid green;
-        border-radius: 15px;
+    },
+    gameOver(){
+      this.alertText = "Koniec gry. Wynik: "+this.snake1.points;
+      if(this.gameMode == "battle"){
+        if(this.snake1.points > this.snake2.points){
+          this.alertText+=". Wygrywa gracz 1";
+        }
+        if(this.snake1.points < this.snake2.points){
+          this.alertText+=". Wygrywa gracz 2";
+        }
+        if(this.snake1.points == this.snake2.points){
+          this.alertText+=". Remis";
+        }
       }
-      .snake_part2 {
-        width: 40px;
-        height: 40px;
-        background-color: orange;
-        position: absolute;
-        border:1px solid orange;
-        border-radius: 15px;
+      this.gameOverAlert = true;
+    },
+    move(snake){
+      if(snake.isAppleEaten == true || snake.isAnimalEaten == true){
+        var newPart = {};
+        newPart.id = snake.nextId;
+        newPart.x = Object(snake.parts[snake.snakeLength-1]).x;
+        newPart.y = Object(snake.parts[snake.snakeLength-1]).y;
+        snake.parts.push(newPart);
+        snake.snakeLength++;
+        snake.nextId++;
+        if(snake.isAppleEaten == true){
+          snake.isAppleEaten = false;
+
+        }
+        else if(snake.isAnimalEaten == true){
+          snake.isAnimalEaten = false;
+          this.animal.x = -2;
+          this.animal.y = -2;
+          this.animal.visible = false;
+        }
+        this.animal.wasDisplayed = false;
       }
-      .snake_head {
-        width: 40px;
-        height: 40px;
-        background-color: black;
-        position: absolute;
-        border:1px solid black;
-        border-radius: 15px;
+      for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
+        Object(snake.parts[i]).y = snake.parts[i-1].y;
+        Object(snake.parts[i]).x = snake.parts[i-1].x;
       }
-      .apple {
-        width: 40px;
-        height: 40px;
-        background-color: red;
-        position: absolute;
+      if(snake.nextMoves.length != 0){
+        if(snake.nextMoves[0] == "up"){     //ruchy głowy
+          snake.parts[0].y--;
+        }
+        else if(snake.nextMoves[0] == "right"){
+          snake.parts[0].x++;
+        }
+        else if(snake.nextMoves[0] == "down"){
+          snake.parts[0].y++;
+        }
+        else if(snake.nextMoves[0] == "left"){
+          snake.parts[0].x--;
+        }
+        snake.nextMoves.splice(0,1);
       }
-      .animal {
-        width: 40px;
-        height: 40px;
-        background-color: brown;
-        position: absolute;
+      else {
+        if(snake.direction == "up"){     //ruchy głowy
+          snake.parts[0].y--;
+        }
+        else if(snake.direction == "right"){
+          snake.parts[0].x++;
+        }
+        else if(snake.direction == "down"){
+          snake.parts[0].y++;
+        }
+        else if(snake.direction   == "left"){
+          snake.parts[0].x--;
+        }
       }
-      p {
-        font-family: Sui Generis;
-        font-size: 15pt;
+    },
+    turn(dir, snake){
+      if(snake.direction == "up" && dir == "down") return;
+      if(snake.direction == "right" && dir == "left") return;
+      if(snake.direction == "down" && dir == "up") return;
+      if(snake.direction == "left" && dir == "right") return;
+      if(snake.nextMoves.length < 2){
+        snake.direction = dir;
+        snake.nextMoves.push(dir);
       }
-      .md-button.mode {
-        margin-top: 20px;
+    },
+    reset(){
+      this.alive = false;
+      this.victory = false;
+      this.snake1.direction = "right";
+      this.snake2.direction = "right";
+      this.snake1.parts = [
+        {id: 0, x: 4, y: 6},
+        {id: 1, x: 3, y: 6},
+        {id: 2, x: 2, y: 6},
+        {id: 3, x: 1, y: 6},
+        {id: 4, x: 0, y: 6},
+      ];
+      this.snake2.parts = [
+        {id: 0, x: 4, y: 2},
+        {id: 1, x: 3, y: 2},
+        {id: 2, x: 2, y: 2},
+        {id: 3, x: 1, y: 2},
+        {id: 4, x: 0, y: 2},
+      ];
+      this.snake1.snakeLength = 5;
+      this.snake2.snakeLength = 5;
+      this.snake1.isAppleEaten = false;
+      this.snake2.isAppleEaten = false;
+      this.snake1.isAnimalEaten = false;
+      this.snake2.isAnimalEaten = false;
+      this.snake1.points = 0;
+      this.snake2.points = 0;
+      this.speed = 200;
+      this.pointsFactor = 1;
+
+      this.snake1.nextId = 5;
+      this.snake2.nextId = 5;
+      this.snake1.alreadyTurned = false;
+      this.snake2.alreadyTurned = false;
+      this.snake1.nextMoves = [];
+      this.snake2.nextMoves = [];
+      this.applesCount = 0;
+
+      this.putApple("apple");
+      this.sleep(3);
+    },
+    putApple(obj){
+      var foundPlaceForApple = false;
+      var x;
+      var y;
+      while(foundPlaceForApple != true){
+        foundPlaceForApple = true;
+        x = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
+        y = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
+        for(var i = this.snake1.snakeLength-1 ; i >= 0 ; i--){
+          if(Object(this.snake1.parts[i]).y == y && Object(this.snake1.parts[i]).x == x){   //jeśli złe miejsce
+            foundPlaceForApple = false;
+            break;
+          }
+        }
+        if(this.gameMode != "single"){
+          for(var k = this.snake2.snakeLength-1 ; k >= 0 ; k--){
+            if(Object(this.snake2.parts[k]).y == y && Object(this.snake2.parts[k]).x == x){   //jeśli złe miejsce
+              foundPlaceForApple = false;
+              break;
+            }
+          }
+        }
+        if(obj == "apple" && x == this.animal.x && y == this.animal.y){
+          foundPlaceForApple = false;
+        }
+        else if(obj == "animal" && x == this.apple.x && y == this.apple.y){
+          foundPlaceForApple = false;
+        }
       }
-      .sleepTimer {
-        font-size: 100pt;
-        font-family: Sui Generis;
-        color: yellow;
-        text-align: center;
-        padding-top: 40px;
+      if(obj == "apple"){
+        this.apple.x = x;
+        this.apple.y = y;
+        this.apple.visible = true;
       }
-      .menuPanel {
-        width: 350px;
+      else if(obj == "animal"){
+        this.animal.x = x;
+        this.animal.y = y;
+        this.animal.value += 15;
+        this.animal.visible = true;
+        this.animal.wasDisplayed = true;
       }
-      .range-slider-knob {
-        width: 20px !important;
+
+    },
+    sleep(sec){
+      this.sleeping = sec;
+      if(this.sleeping > 0){
+        setTimeout(()=>{
+          if(this.pause == false) this.sleeping-=1;
+          this.sleep(this.sleeping);
+        }, 1000);
       }
-      .scores {
-        width: 450px;
-        margin-left: 20px;
+      if(this.sleeping == 0) {
+        this.alive = true;
+        this.putApple("apple");
+        this.update();
       }
-      .copyright {
-        color: grey;
-        font-size: 10pt;
-      }
-    </style>
+    },
+  }
+}
+</script>
+
+<style>
+body {
+  overflow: hidden;
+}
+#app {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  flex-wrap: wrap;
+}
+#map {
+  background-size: 40px 40px;
+  background-image:
+  linear-gradient(to right, grey 1px, transparent 1px),
+  linear-gradient(to bottom, grey 1px, transparent 1px);
+  position: relative;
+}
+.mainView {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.snake_part1 {
+  width: 40px;
+  height: 40px;
+  background-color: green;
+  position: absolute;
+  border:1px solid green;
+  border-radius: 15px;
+}
+.snake_part2 {
+  width: 40px;
+  height: 40px;
+  background-color: orange;
+  position: absolute;
+  border:1px solid orange;
+  border-radius: 15px;
+}
+.snake_head {
+  width: 40px;
+  height: 40px;
+  background-color: black;
+  position: absolute;
+  border:1px solid black;
+  border-radius: 15px;
+}
+.apple {
+  width: 40px;
+  height: 40px;
+  background-color: red;
+  position: absolute;
+}
+.animal {
+  width: 40px;
+  height: 40px;
+  background-color: brown;
+  position: absolute;
+}
+p {
+  font-family: Sui Generis;
+  font-size: 15pt;
+}
+.md-button.mode {
+  margin-top: 20px;
+}
+.sleepTimer {
+  font-size: 100pt;
+  font-family: Sui Generis;
+  color: yellow;
+  text-align: center;
+  padding-top: 40px;
+}
+.menuPanel {
+  width: 350px;
+}
+.range-slider-knob {
+  width: 20px !important;
+}
+.scores {
+  width: 450px;
+  margin-left: 20px;
+}
+.copyright {
+  color: grey;
+  font-size: 10pt;
+}
+.pause {
+  font-size: 15pt;
+  font-family: Sui Generis;
+  color: brown;
+  padding-top: 0;
+  margin-top: 0;
+  position: absolute;
+  top: 0;
+}
+</style>
