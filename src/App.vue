@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <div class="mainView">
+
       <div class="scores">
         <p v-if="gameMode == 'coop' || gameMode == 'single'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
         <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
@@ -11,8 +12,15 @@
         <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">PAUSE</h6>
         <div :class="snakeClass(part.id, snake1)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
         <div v-if="gameMode != 'single'"><div :class="snakeClass(part.id, snake2)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div></div>
-        <div class="apple" v-bind:style="applePosition(apple)" v-if="apple.visible == true"></div>
-        <div v-if="animal.visible == true"><div class="animal" v-bind:style="applePosition(animal)"></div></div>
+        <div class="apple" v-bind:style="applePosition(apple)" v-if="apple.visible == true">
+          <md-icon class="fruit" :md-src="require('./assets/apple.svg')" />
+        </div>
+        <div v-if="animal.visible == true">
+          <div class="animal" v-bind:style="applePosition(animal)">
+            <div class="animalTimer">{{animal.remainingTime}}</div>
+            <md-icon class="fruit" :md-src="require('./assets/animal'+this.setAnimalImage()+'.svg')" />
+          </div>
+        </div>
       </div>
 
       <div class="menuPanel">
@@ -175,10 +183,12 @@
               animal: {
                 x: -2,
                 y: -2,
-                value: 15,
+                value: 0,
                 visible: false,
+                wasDisplayed: false,
                 eaten: false,
-                wasDisplayed: false
+                time: 3,
+                remainingTime: 3,
               },
               sleeping: 3,
               pointsFactor: 1,
@@ -197,7 +207,7 @@
             });
             this.sleep(3);
             window.addEventListener("keyup", e => {
-              if(e.keyCode == 80){  //left
+              if(e.keyCode == 80 && this.saving == false){  //left
                 this.pause == false ? this.pause = true : this.pause = false;
               }
               if(this.pause == false){
@@ -231,6 +241,14 @@
 
           },
 methods: {
+  setAnimalImage(){
+    if(this.animal.value/15 <= 8){
+      return this.animal.value/15;
+    }
+    if(this.animal.value/15 > 8){
+      return 8;
+    }
+  },
   wannaSave(){
     if(this.snake1.points + this.snake2.points != 0 && this.gameMode != 'battle') this.saving=true;
     else this.snackbarError = true;
@@ -300,286 +318,316 @@ methods: {
         this.alive = false;
         this.whyDied = snake.snakeId+" za mapą";
       }
-      else {
-        for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
-          if(Object(snake.parts[i]).y == snake.parts[0].y && Object(snake.parts[i]).x == snake.parts[0].x){
-            this.alive = false;
-            this.whyDied = snake.snakeId+" sie sam zjadł";
-            break;
-          }
+    else {
+      for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //czy uderza w ogon
+        if(Object(snake.parts[i]).y == snake.parts[0].y && Object(snake.parts[i]).x == snake.parts[0].x){
+          this.alive = false;
+          this.whyDied = snake.snakeId+" sie sam zjadł";
+          break;
         }
       }
+    }
 
-    },
-    checkSnakeEatSnake(){
-      if(this.snake1.parts[0].x == this.snake2.parts[0].x && this.snake1.parts[0].y == this.snake2.parts[0].y){
+  },
+  checkSnakeEatSnake(){
+    if(this.snake1.parts[0].x == this.snake2.parts[0].x && this.snake1.parts[0].y == this.snake2.parts[0].y){
+      this.alive = false;
+      this.whyDied = "Czołówka!!";
+      return;
+    }
+    for(var k = 0 ; k < this.snake2.snakeLength ; k++){   //czy snaki sie same uderzaja
+      if(this.snake1.parts[0].x == this.snake2.parts[k].x && this.snake1.parts[0].y == this.snake2.parts[k].y){
         this.alive = false;
-        this.whyDied = "Czołówka!!";
-        return;
+        this.whyDied = "Gracz 1 sie wyłożył";
       }
-      for(var k = 0 ; k < this.snake2.snakeLength ; k++){   //czy snaki sie same uderzaja
-        if(this.snake1.parts[0].x == this.snake2.parts[k].x && this.snake1.parts[0].y == this.snake2.parts[k].y){
-          this.alive = false;
-          this.whyDied = "Gracz 1 sie wyłożył";
-        }
+    }
+    for(var j = 0 ; j < this.snake1.snakeLength ; j++){   //czy snaki sie same uderzaja
+      if(this.snake2.parts[0].x == this.snake1.parts[j].x && this.snake2.parts[0].y == this.snake1.parts[j].y){
+        this.alive = false;
+        this.whyDied = "Gracz 2 sie wyłożył";
       }
-      for(var j = 0 ; j < this.snake1.snakeLength ; j++){   //czy snaki sie same uderzaja
-        if(this.snake2.parts[0].x == this.snake1.parts[j].x && this.snake2.parts[0].y == this.snake1.parts[j].y){
-          this.alive = false;
-          this.whyDied = "Gracz 2 sie wyłożył";
-        }
+    }
+  },
+  checkAppleEaten(snake){
+    if(snake.parts[0].x == this.apple.x && snake.parts[0].y == this.apple.y){
+      snake.isAppleEaten = true;
+      snake.points += 10*this.pointsFactor;
+      this.applesCount++;
+      if(this.applesCount == this.mapSize*this.mapSize-5){
+        this.victory = true;
+        this.alive = false;
       }
-    },
-    checkAppleEaten(snake){
-      if(snake.parts[0].x == this.apple.x && snake.parts[0].y == this.apple.y){
-        snake.isAppleEaten = true;
-        snake.points += 10*this.pointsFactor;
-        this.applesCount++;
-        if(this.applesCount == this.mapSize*this.mapSize-5){
-          this.victory = true;
-          this.alive = false;
-        }
-        this.putApple("apple");
+      this.putApple("apple");
+    }
+  },
+  checkAnimalEaten(snake){
+    if(snake.parts[0].x == this.animal.x && snake.parts[0].y == this.animal.y){
+      snake.isAnimalEaten = true;
+      snake.points += this.animal.value*this.pointsFactor;
+      this.applesCount++;
+      this.animal.x = -2;
+      this.animal.y = -2;
+      this.animal.visible = false;
+      this.animal.eaten = true;
+      if(this.applesCount == this.mapSize*this.mapSize-5){
+        this.victory = true;
+        this.alive = false;
       }
-    },
-    checkAnimalEaten(snake){
-      if(snake.parts[0].x == this.animal.x && snake.parts[0].y == this.animal.y){
-        snake.isAnimalEaten = true;
-        snake.points += this.animal.value*this.pointsFactor;
-        this.applesCount++;
-        if(this.applesCount == this.mapSize*this.mapSize-5){
-          this.victory = true;
-          this.alive = false;
-        }
-      }
-    },
-    update(){
-      if(this.alive){
-        if(!this.pause){
-          this.move(this.snake1);
-          if(this.gameMode != "single")   this.move(this.snake2);
-          this.checkSnakeAlive(this.snake1);
-          if(this.gameMode != "single")   this.checkSnakeAlive(this.snake2);
-          if(this.gameMode != "single")   this.checkSnakeEatSnake();
+    }
+  },
+  update(){
+    if(this.alive){
+      if(!this.pause){
+        this.move(this.snake1);
+        if(this.gameMode != "single")   this.move(this.snake2);
+        this.checkSnakeAlive(this.snake1);
+        if(this.gameMode != "single")   this.checkSnakeAlive(this.snake2);
+        if(this.gameMode != "single")   this.checkSnakeEatSnake();
 
-          if(!this.alive){
-            this.gameOver();
-          }
-          this.checkAppleEaten(this.snake1);
-          this.checkAnimalEaten(this.snake1);
-          if(this.gameMode != "single"){
-            this.checkAppleEaten(this.snake2);
-            this.checkAnimalEaten(this.snake2);
-          }
-
-          // if(this.applesCount != 0 && this.applesCount%3 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
-          //   this.animal.wasDisplayed = true;
-          //   this.putApple("animal");
-          //   var time = 3;
-          //   this.controlAnimalTime(time);
-          // }
+        if(!this.alive){
+          this.gameOver();
         }
-        setTimeout(this.update, this.speed);
+        this.checkAppleEaten(this.snake1);
+        this.checkAnimalEaten(this.snake1);
+        if(this.gameMode != "single"){
+          this.checkAppleEaten(this.snake2);
+          this.checkAnimalEaten(this.snake2);
+        }
+
+        if(this.applesCount != 0 && this.applesCount%3 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
+          this.putApple("animal");
+          var time = this.animal.time;
+          this.animal.remainingTime = time;
+          this.controlAnimalTime(time);
+        }
       }
+      setTimeout(this.update, this.speed);
+    }
 
-    },
-    controlAnimalTime(time){
-      if(time > 0){
-        if(this.snake1.isAnimalEaten == true || this.snake2.isAnimalEaten == true){
-          this.animal.visible = false;
-          this.animal.x = -2;
-          this.animal.y = -2;
-        }
+  },
+  controlAnimalTime(time){
+    if(time > 0){
+      if(this.animal.eaten == true){
+        this.animal.visible = false;
+        this.animal.x = -2;
+        this.animal.y = -2;
+      }
+      if(this.animal.eaten == false){
         setTimeout(()=>{
-          time-=1;
+          if(this.animal.eaten == false){
+            time-=1;
+            this.animal.remainingTime -= 1;
+          }
           this.controlAnimalTime(time);
         }, 1000);
       }
-      if(time == 0) {
-        this.animal.x = -2;
-        this.animal.y = -2;
-        this.animal.visible = false;
+    }
+    if(time == 0) {
+      this.animal.x = -2;
+      this.animal.y = -2;
+      this.animal.value = 0;
+      this.animal.visible = false;
+    }
+  },
+  gameOver(){
+    this.alertText = "Koniec gry. Wynik: "+this.snake1.points;
+    if(this.gameMode == "battle"){
+      if(this.snake1.points > this.snake2.points){
+        this.alertText+=". Wygrywa gracz 1";
       }
-    },
-    gameOver(){
-      this.alertText = "Koniec gry. Wynik: "+this.snake1.points;
-      if(this.gameMode == "battle"){
-        if(this.snake1.points > this.snake2.points){
-          this.alertText+=". Wygrywa gracz 1";
-        }
-        if(this.snake1.points < this.snake2.points){
-          this.alertText+=". Wygrywa gracz 2";
-        }
-        if(this.snake1.points == this.snake2.points){
-          this.alertText+=". Remis";
-        }
+      if(this.snake1.points < this.snake2.points){
+        this.alertText+=". Wygrywa gracz 2";
       }
-      this.gameOverAlert = true;
-    },
-    move(snake){
-      if(snake.isAppleEaten == true || snake.isAnimalEaten == true){
-        var newPart = {};
-        newPart.id = snake.nextId;
-        newPart.x = Object(snake.parts[snake.snakeLength-1]).x;
-        newPart.y = Object(snake.parts[snake.snakeLength-1]).y;
-        snake.parts.push(newPart);
-        snake.snakeLength++;
-        snake.nextId++;
-        if(snake.isAppleEaten == true){
-          snake.isAppleEaten = false;
+      if(this.snake1.points == this.snake2.points){
+        this.alertText+=". Remis";
+      }
+    }
+    this.gameOverAlert = true;
+  },
+  move(snake){
+    if(snake.isAppleEaten == true || snake.isAnimalEaten == true){
+      var newPart = {};
+      newPart.id = snake.nextId;
+      newPart.x = Object(snake.parts[snake.snakeLength-1]).x;
+      newPart.y = Object(snake.parts[snake.snakeLength-1]).y;
+      snake.parts.push(newPart);
+      snake.snakeLength++;
+      snake.nextId++;
+      if(snake.isAppleEaten == true){
+        snake.isAppleEaten = false;
 
-        }
-        else if(snake.isAnimalEaten == true){
-          snake.isAnimalEaten = false;
-          this.animal.x = -2;
-          this.animal.y = -2;
-          this.animal.visible = false;
-        }
-        this.animal.wasDisplayed = false;
       }
-      for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
-        Object(snake.parts[i]).y = snake.parts[i-1].y;
-        Object(snake.parts[i]).x = snake.parts[i-1].x;
+      else if(snake.isAnimalEaten == true){
+        snake.isAnimalEaten = false;
+        // this.animal.x = -2;
+        // this.animal.y = -2;
+        // this.animal.visible = false;
+        // this.animal.eaten = true;
       }
-      if(snake.nextMoves.length != 0){
-        if(snake.nextMoves[0] == "up"){     //ruchy głowy
-          snake.parts[0].y--;
-        }
-        else if(snake.nextMoves[0] == "right"){
-          snake.parts[0].x++;
-        }
-        else if(snake.nextMoves[0] == "down"){
-          snake.parts[0].y++;
-        }
-        else if(snake.nextMoves[0] == "left"){
-          snake.parts[0].x--;
-        }
-        snake.nextMoves.splice(0,1);
+      if(this.applesCount%3 != 0)  this.animal.wasDisplayed = false;
+    }
+    for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
+      Object(snake.parts[i]).y = snake.parts[i-1].y;
+      Object(snake.parts[i]).x = snake.parts[i-1].x;
+    }
+    if(snake.nextMoves.length != 0){
+      if(snake.nextMoves[0] == "up"){     //ruchy głowy
+        snake.parts[0].y--;
       }
-      else {
-        if(snake.direction == "up"){     //ruchy głowy
-          snake.parts[0].y--;
-        }
-        else if(snake.direction == "right"){
-          snake.parts[0].x++;
-        }
-        else if(snake.direction == "down"){
-          snake.parts[0].y++;
-        }
-        else if(snake.direction   == "left"){
-          snake.parts[0].x--;
-        }
+      else if(snake.nextMoves[0] == "right"){
+        snake.parts[0].x++;
       }
-    },
-    turn(dir, snake){
-      if(snake.direction == "up" && dir == "down") return;
-      if(snake.direction == "right" && dir == "left") return;
-      if(snake.direction == "down" && dir == "up") return;
-      if(snake.direction == "left" && dir == "right") return;
-      if(snake.nextMoves.length < 2){
-        snake.direction = dir;
-        snake.nextMoves.push(dir);
+      else if(snake.nextMoves[0] == "down"){
+        snake.parts[0].y++;
       }
-    },
-    reset(){
-      this.alive = false;
-      this.victory = false;
-      this.snake1.direction = "right";
-      this.snake2.direction = "right";
-      this.snake1.parts = [
-        {id: 0, x: 4, y: 6},
-        {id: 1, x: 3, y: 6},
-        {id: 2, x: 2, y: 6},
-        {id: 3, x: 1, y: 6},
-        {id: 4, x: 0, y: 6},
-      ];
-      this.snake2.parts = [
-        {id: 0, x: 4, y: 2},
-        {id: 1, x: 3, y: 2},
-        {id: 2, x: 2, y: 2},
-        {id: 3, x: 1, y: 2},
-        {id: 4, x: 0, y: 2},
-      ];
-      this.snake1.snakeLength = 5;
-      this.snake2.snakeLength = 5;
-      this.snake1.isAppleEaten = false;
-      this.snake2.isAppleEaten = false;
-      this.snake1.isAnimalEaten = false;
-      this.snake2.isAnimalEaten = false;
-      this.snake1.points = 0;
-      this.snake2.points = 0;
-      this.speed = 200;
-      this.pointsFactor = 1;
+      else if(snake.nextMoves[0] == "left"){
+        snake.parts[0].x--;
+      }
+      snake.nextMoves.splice(0,1);
+    }
+    else {
+      if(snake.direction == "up"){     //ruchy głowy
+        snake.parts[0].y--;
+      }
+      else if(snake.direction == "right"){
+        snake.parts[0].x++;
+      }
+      else if(snake.direction == "down"){
+        snake.parts[0].y++;
+      }
+      else if(snake.direction   == "left"){
+        snake.parts[0].x--;
+      }
+    }
+  },
+  turn(dir, snake){
+    if(snake.direction == "up" && dir == "down") return;
+    if(snake.direction == "right" && dir == "left") return;
+    if(snake.direction == "down" && dir == "up") return;
+    if(snake.direction == "left" && dir == "right") return;
+    if(snake.nextMoves.length < 2){
+      snake.direction = dir;
+      snake.nextMoves.push(dir);
+    }
+  },
+  reset(){
+    this.alive = false;
+    this.victory = false;
+    this.snake1.direction = "right";
+    this.snake2.direction = "right";
+    this.snake1.parts = [
+      {id: 0, x: 4, y: 6},
+      {id: 1, x: 3, y: 6},
+      {id: 2, x: 2, y: 6},
+      {id: 3, x: 1, y: 6},
+      {id: 4, x: 0, y: 6},
+    ];
+    this.snake2.parts = [
+      {id: 0, x: 4, y: 2},
+      {id: 1, x: 3, y: 2},
+      {id: 2, x: 2, y: 2},
+      {id: 3, x: 1, y: 2},
+      {id: 4, x: 0, y: 2},
+    ];
+    this.snake1.snakeLength = 5;
+    this.snake2.snakeLength = 5;
+    this.snake1.isAppleEaten = false;
+    this.snake2.isAppleEaten = false;
+    this.snake1.isAnimalEaten = false;
+    this.snake2.isAnimalEaten = false;
+    this.snake1.points = 0;
+    this.snake2.points = 0;
+    this.speed = 200;
+    this.pointsFactor = 1;
 
-      this.snake1.nextId = 5;
-      this.snake2.nextId = 5;
-      this.snake1.alreadyTurned = false;
-      this.snake2.alreadyTurned = false;
-      this.snake1.nextMoves = [];
-      this.snake2.nextMoves = [];
-      this.applesCount = 0;
+    this.snake1.nextId = 5;
+    this.snake2.nextId = 5;
+    this.snake1.alreadyTurned = false;
+    this.snake2.alreadyTurned = false;
+    this.snake1.nextMoves = [];
+    this.snake2.nextMoves = [];
+    this.applesCount = 0;
+    this.apple.visible = false;
 
-      this.putApple("apple");
-      this.sleep(3);
-    },
-    putApple(obj){
-      var foundPlaceForApple = false;
-      var x;
-      var y;
-      while(foundPlaceForApple != true){
-        foundPlaceForApple = true;
-        x = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
-        y = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
-        for(var i = this.snake1.snakeLength-1 ; i >= 0 ; i--){
-          if(Object(this.snake1.parts[i]).y == y && Object(this.snake1.parts[i]).x == x){   //jeśli złe miejsce
+    this.animal.x = -2;
+    this.animal.y = -2;
+    this.animal.value = 0;
+    this.animal.visible = false;
+    this.animal.wasDisplayed = false;
+    this.animal.eaten = false;
+
+
+    this.user.name = "";
+    this.user.score = 0;
+    this.user.mode = "";
+
+    this.sleep(3);
+  },
+  setAnimalTime(){
+    if(this.mapSize <= 11)  this.animal.time = 3;
+    if(this.mapSize >= 12 && this.mapSize <= 15)  this.animal.time = 4;
+    if(this.mapSize >= 16)  this.animal.time = 5;
+  },
+  putApple(obj){
+    var foundPlaceForApple = false;
+    var x;
+    var y;
+    while(foundPlaceForApple != true){
+      foundPlaceForApple = true;
+      x = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
+      y = Math.floor(Math.random()*(this.mapSize-1-0+1)+0);
+      for(var i = this.snake1.snakeLength-1 ; i >= 0 ; i--){
+        if(Object(this.snake1.parts[i]).y == y && Object(this.snake1.parts[i]).x == x){   //jeśli złe miejsce
+          foundPlaceForApple = false;
+          break;
+        }
+      }
+      if(this.gameMode != "single"){
+        for(var k = this.snake2.snakeLength-1 ; k >= 0 ; k--){
+          if(Object(this.snake2.parts[k]).y == y && Object(this.snake2.parts[k]).x == x){   //jeśli złe miejsce
             foundPlaceForApple = false;
             break;
           }
         }
-        if(this.gameMode != "single"){
-          for(var k = this.snake2.snakeLength-1 ; k >= 0 ; k--){
-            if(Object(this.snake2.parts[k]).y == y && Object(this.snake2.parts[k]).x == x){   //jeśli złe miejsce
-              foundPlaceForApple = false;
-              break;
-            }
-          }
-        }
-        if(obj == "apple" && x == this.animal.x && y == this.animal.y){
-          foundPlaceForApple = false;
-        }
-        else if(obj == "animal" && x == this.apple.x && y == this.apple.y){
-          foundPlaceForApple = false;
-        }
       }
-      if(obj == "apple"){
-        this.apple.x = x;
-        this.apple.y = y;
-        this.apple.visible = true;
+      if(obj == "apple" && x == this.animal.x && y == this.animal.y){
+        foundPlaceForApple = false;
       }
-      else if(obj == "animal"){
-        this.animal.x = x;
-        this.animal.y = y;
-        this.animal.value += 15;
-        this.animal.visible = true;
-        this.animal.wasDisplayed = true;
+      else if(obj == "animal" && x == this.apple.x && y == this.apple.y){
+        foundPlaceForApple = false;
       }
+    }
+    if(obj == "apple"){
+      this.apple.x = x;
+      this.apple.y = y;
+      this.apple.visible = true;
+    }
+    else if(obj == "animal"){
+      this.animal.x = x;
+      this.animal.y = y;
+      this.animal.value += 15;
+      this.animal.visible = true;
+      this.animal.wasDisplayed = true;
+      this.animal.eaten = false;
+    }
 
-    },
-    sleep(sec){
-      this.sleeping = sec;
-      if(this.sleeping > 0){
-        setTimeout(()=>{
-          if(this.pause == false) this.sleeping-=1;
-          this.sleep(this.sleeping);
-        }, 1000);
-      }
-      if(this.sleeping == 0) {
-        this.alive = true;
-        this.putApple("apple");
-        this.update();
-      }
-    },
-  }
+  },
+  sleep(sec){
+    this.sleeping = sec;
+    if(this.sleeping > 0){
+      setTimeout(()=>{
+        if(this.pause == false) this.sleeping-=1;
+        this.sleep(this.sleeping);
+      }, 1000);
+    }
+    if(this.sleeping == 0) {
+      this.setAnimalTime();
+      this.alive = true;
+      this.putApple("apple");
+      this.update();
+    }
+  },
+}
 }
 </script>
 
@@ -641,14 +689,16 @@ body {
 .apple {
   width: 40px;
   height: 40px;
-  background-color: red;
   position: absolute;
+  display: flex;
+  align-items: center;
 }
 .animal {
   width: 40px;
   height: 40px;
-  background-color: brown;
   position: absolute;
+  display: flex;
+  align-items: center;
 }
 p {
   font-family: Sui Generis;
@@ -686,5 +736,12 @@ p {
   margin-top: 0;
   position: absolute;
   top: 0;
+}
+.animalTimer {
+  position: absolute;
+  left: 2px;
+  top: 0px;
+  font-size: 7pt;
+  font-family: Sui Generis;
 }
 </style>
