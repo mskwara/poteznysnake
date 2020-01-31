@@ -394,7 +394,7 @@ methods: {
           this.checkAnimalEaten(this.snake2);
         }
 
-        if(this.applesCount != 0 && this.applesCount%3 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
+        if(this.applesCount != 0 && this.applesCount%10 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
           this.putApple("animal");
           var time = this.animal.time;
           this.animal.remainingTime = time;
@@ -464,7 +464,7 @@ methods: {
         // this.animal.visible = false;
         // this.animal.eaten = true;
       }
-      if(this.applesCount%3 != 0)  this.animal.wasDisplayed = false;
+      if(this.applesCount%10 != 0)  this.animal.wasDisplayed = false;
     }
     for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
       Object(snake.parts[i]).y = snake.parts[i-1].y;
