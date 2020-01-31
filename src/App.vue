@@ -21,6 +21,12 @@
             <md-icon class="fruit" :md-src="require('./assets/animal'+this.setAnimalImage()+'.svg')" />
           </div>
         </div>
+        <div v-if="poison.visible == true">
+          <div class="animal" v-bind:style="applePosition(poison)">
+            <div class="animalTimer">{{poison.remainingTime}}</div>
+            <md-icon class="fruit" :md-src="require('./assets/skull.svg')" />
+          </div>
+        </div>
       </div>
 
       <div class="menuPanel">
@@ -189,6 +195,17 @@
                 eaten: false,
                 time: 3,
                 remainingTime: 3,
+              },
+              poison: {
+                x: -3,
+                y: -3,
+                value: 150,
+                visible: false,
+                wasDisplayed: false,
+                eaten: false,
+                time: 5,
+                remainingTime: 5,
+                freq: 16,
               },
               sleeping: 3,
               pointsFactor: 1,
@@ -375,6 +392,21 @@ methods: {
       }
     }
   },
+  checkPoisonEaten(snake){
+    if(snake.parts[0].x == this.poison.x && snake.parts[0].y == this.poison.y){
+      snake.isPoisonEaten = true;
+      snake.points -= this.poison.value*this.pointsFactor;
+      this.applesCount++;
+      this.poison.x = -3;
+      this.poison.y = -3;
+      this.poison.visible = false;
+      this.poison.eaten = true;
+      if(this.applesCount == this.mapSize*this.mapSize-5){
+        this.victory = true;
+        this.alive = false;
+      }
+    }
+  },
   update(){
     if(this.alive){
       if(!this.pause){
@@ -389,9 +421,11 @@ methods: {
         }
         this.checkAppleEaten(this.snake1);
         this.checkAnimalEaten(this.snake1);
+        this.checkPoisonEaten(this.snake1);
         if(this.gameMode != "single"){
           this.checkAppleEaten(this.snake2);
           this.checkAnimalEaten(this.snake2);
+          this.checkPoisonEaten(this.snake2);
         }
 
         if(this.applesCount != 0 && this.applesCount%10 == 0 && this.animal.visible == false && this.animal.wasDisplayed == false){
@@ -399,6 +433,12 @@ methods: {
           var time = this.animal.time;
           this.animal.remainingTime = time;
           this.controlAnimalTime(time);
+        }
+        if(this.applesCount != 0 && this.applesCount%this.poison.freq == 0 && this.poison.visible == false && this.poison.wasDisplayed == false){
+          this.putApple("poison");
+          var time1 = this.poison.time;
+          this.poison.remainingTime = time1;
+          this.controlPoisonTime(time1);
         }
       }
       setTimeout(this.update, this.speed);
@@ -429,6 +469,29 @@ methods: {
       this.animal.visible = false;
     }
   },
+  controlPoisonTime(time){
+    if(time > 0){
+      if(this.poison.eaten == true){
+        this.poison.visible = false;
+        this.poison.x = -3;
+        this.poison.y = -3;
+      }
+      if(this.poison.eaten == false){
+        setTimeout(()=>{
+          if(this.poison.eaten == false){
+            time-=1;
+            this.poison.remainingTime -= 1;
+          }
+          this.controlPoisonTime(time);
+        }, 1000);
+      }
+    }
+    if(time == 0) {
+      this.poison.x = -2;
+      this.poison.y = -2;
+      this.poison.visible = false;
+    }
+  },
   gameOver(){
     this.alertText = "Koniec gry. Wynik: "+this.snake1.points;
     if(this.gameMode == "battle"){
@@ -445,7 +508,7 @@ methods: {
     this.gameOverAlert = true;
   },
   move(snake){
-    if(snake.isAppleEaten == true || snake.isAnimalEaten == true){
+    if(snake.isAppleEaten == true || snake.isAnimalEaten == true || snake.isPoisonEaten){
       var newPart = {};
       newPart.id = snake.nextId;
       newPart.x = Object(snake.parts[snake.snakeLength-1]).x;
@@ -459,12 +522,17 @@ methods: {
       }
       else if(snake.isAnimalEaten == true){
         snake.isAnimalEaten = false;
-        // this.animal.x = -2;
-        // this.animal.y = -2;
-        // this.animal.visible = false;
-        // this.animal.eaten = true;
+      }
+      else if(snake.isPoisonEaten == true){
+        snake.isPoisonEaten = false;
       }
       if(this.applesCount%10 != 0)  this.animal.wasDisplayed = false;
+      if(this.applesCount%this.poison.freq != 0)  {
+        if(this.poison.wasDisplayed == true || (this.poison.eaten == true && this.poison.wasDisplayed == true)){
+          this.poison.freq = Math.floor(Math.random() * (25 - 10 + 1) ) + 10;
+        }
+        this.poison.wasDisplayed = false;
+      }
     }
     for(var i = snake.snakeLength-1 ; i > 0 ; i--){      //ruch całego ciała
       Object(snake.parts[i]).y = snake.parts[i-1].y;
@@ -556,6 +624,16 @@ methods: {
     this.animal.wasDisplayed = false;
     this.animal.eaten = false;
 
+    this.poison.x = -3,
+    this.poison.y = -3,
+    this.poison.value = 150,
+    this.poison.visible = false,
+    this.poison.wasDisplayed = false,
+    this.poison.eaten = false,
+    this.poison.time = 5,
+    this.poison.remainingTime = 5,
+    this.poison.freq = Math.floor(Math.random() * (25 - 10 + 1) ) + 10;
+
 
     this.user.name = "";
     this.user.score = 0;
@@ -590,10 +668,13 @@ methods: {
           }
         }
       }
-      if(obj == "apple" && x == this.animal.x && y == this.animal.y){
+      if(obj == "apple" && (x == this.animal.x && y == this.animal.y) || (x == this.poison.x && y == this.poison.y)){
         foundPlaceForApple = false;
       }
-      else if(obj == "animal" && x == this.apple.x && y == this.apple.y){
+      else if(obj == "animal" && (x == this.apple.x && y == this.apple.y) || (x == this.poison.x && y == this.poison.y)){
+        foundPlaceForApple = false;
+      }
+      else if(obj == "poison" && (x == this.apple.x && y == this.apple.y) || (x == this.animal.x && y == this.animal.y)){
         foundPlaceForApple = false;
       }
     }
@@ -609,6 +690,13 @@ methods: {
       this.animal.visible = true;
       this.animal.wasDisplayed = true;
       this.animal.eaten = false;
+    }
+    else if(obj == "poison"){
+      this.poison.x = x;
+      this.poison.y = y;
+      this.poison.visible = true;
+      this.poison.wasDisplayed = true;
+      this.poison.eaten = false;
     }
 
   },
@@ -710,7 +798,7 @@ p {
 .sleepTimer {
   font-size: 100pt;
   font-family: Sui Generis;
-  color: yellow;
+  color: #00c3ff;
   text-align: center;
   padding-top: 40px;
 }
