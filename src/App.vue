@@ -454,7 +454,7 @@ methods: {
       }
       if(this.animal.eaten == false){
         setTimeout(()=>{
-          if(this.animal.eaten == false){
+          if(this.animal.eaten == false && this.pause == false){
             time-=1;
             this.animal.remainingTime -= 1;
           }
@@ -478,7 +478,7 @@ methods: {
       }
       if(this.poison.eaten == false){
         setTimeout(()=>{
-          if(this.poison.eaten == false){
+          if(this.poison.eaten == false && this.pause == false){
             time-=1;
             this.poison.remainingTime -= 1;
           }
