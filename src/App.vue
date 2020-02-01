@@ -6,7 +6,6 @@
         <p v-if="gameMode == 'coop' || gameMode == 'single'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
         <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
         <scoreboard :list="ranking"></scoreboard>
-        {{applesCount}}   {{poison.freq}}
       </div>
       <div id="map" v-bind:style="setMap()">
         <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
@@ -206,7 +205,7 @@
                 eaten: false,
                 time: 5,
                 remainingTime: 5,
-                freq: 16,
+                next: 16,
               },
               sleeping: 3,
               pointsFactor: 1,
@@ -435,7 +434,7 @@ methods: {
           this.animal.remainingTime = time;
           this.controlAnimalTime(time);
         }
-        if(this.applesCount != 0 && this.applesCount%this.poison.freq == 0 && this.poison.visible == false && this.poison.wasDisplayed == false){
+        if(this.applesCount != 0 && this.applesCount == this.poison.next && this.poison.visible == false && this.poison.wasDisplayed == false){
           this.putApple("poison");
           var time1 = this.poison.time;
           this.poison.remainingTime = time1;
@@ -528,9 +527,9 @@ methods: {
         snake.isPoisonEaten = false;
       }
       if(this.applesCount%10 != 0)  this.animal.wasDisplayed = false;
-      if(this.applesCount%this.poison.freq != 0)  {
+      if(this.applesCount != this.poison.next)  {
         if(this.poison.wasDisplayed == true || (this.poison.eaten == true && this.poison.wasDisplayed == true)){
-          this.poison.freq = Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
+          this.poison.next += Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
         }
         this.poison.wasDisplayed = false;
       }
@@ -710,7 +709,7 @@ methods: {
     }
     if(this.sleeping == 0) {
       this.setAnimalTime();
-      this.poison.freq = Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
+      this.poison.next = Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
       this.alive = true;
       this.putApple("apple");
       this.update();
