@@ -199,7 +199,7 @@
               poison: {
                 x: -3,
                 y: -3,
-                value: 150,
+                value: 50,
                 visible: false,
                 wasDisplayed: false,
                 eaten: false,
