@@ -6,6 +6,7 @@
         <p v-if="gameMode == 'coop' || gameMode == 'single'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
         <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
         <scoreboard :list="ranking"></scoreboard>
+        {{poison.freq}}
       </div>
       <div id="map" v-bind:style="setMap()">
         <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
@@ -487,8 +488,8 @@ methods: {
       }
     }
     if(time == 0) {
-      this.poison.x = -2;
-      this.poison.y = -2;
+      this.poison.x = -3;
+      this.poison.y = -3;
       this.poison.visible = false;
     }
   },
@@ -632,7 +633,6 @@ methods: {
     this.poison.eaten = false,
     this.poison.time = 5,
     this.poison.remainingTime = 5,
-    this.poison.freq = Math.floor(Math.random() * (25 - 10 + 1) ) + 10;
 
 
     this.user.name = "";
@@ -710,6 +710,7 @@ methods: {
     }
     if(this.sleeping == 0) {
       this.setAnimalTime();
+      this.poison.freq = Math.floor(Math.random() * (25 - 10 + 1) ) + 10;
       this.alive = true;
       this.putApple("apple");
       this.update();
