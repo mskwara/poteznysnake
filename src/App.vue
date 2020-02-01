@@ -6,7 +6,7 @@
         <p v-if="gameMode == 'coop' || gameMode == 'single'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
         <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
         <scoreboard :list="ranking"></scoreboard>
-        {{poison.freq}}
+        {{applesCount}}   {{poison.freq}}
       </div>
       <div id="map" v-bind:style="setMap()">
         <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
