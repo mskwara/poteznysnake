@@ -9,6 +9,7 @@
     "require": {
         "slim/slim": "^3",
         "ext-json": "*",
-        "ext-sqlite3": "*"
+        "ext-sqlite3": "*",
+        "doctrine/dbal": "^2.10"
     }
 }
