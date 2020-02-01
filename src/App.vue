@@ -530,7 +530,7 @@ methods: {
       if(this.applesCount%10 != 0)  this.animal.wasDisplayed = false;
       if(this.applesCount%this.poison.freq != 0)  {
         if(this.poison.wasDisplayed == true || (this.poison.eaten == true && this.poison.wasDisplayed == true)){
-          this.poison.freq = Math.floor(Math.random() * (25 - 10 + 1) ) + 10;
+          this.poison.freq = Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
         }
         this.poison.wasDisplayed = false;
       }
@@ -710,7 +710,7 @@ methods: {
     }
     if(this.sleeping == 0) {
       this.setAnimalTime();
-      this.poison.freq = Math.floor(Math.random() * (25 - 10 + 1) ) + 10;
+      this.poison.freq = Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
       this.alive = true;
       this.putApple("apple");
       this.update();
