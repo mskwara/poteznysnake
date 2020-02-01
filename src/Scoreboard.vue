@@ -27,4 +27,10 @@
 .md-table-cell {
   text-align: left;
 }
+.md-table-row {
+  height: 40px !important;
+}
+.md-table-cell {
+  height: 40px !important;
+}
 </style>
