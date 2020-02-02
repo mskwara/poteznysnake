@@ -155,6 +155,7 @@
                 nextMoves: [],
                 isAppleEaten: false,
                 isAnimalEaten: false,
+                isPoisonEaten: false,
                 points: 0,
                 color: "green",
               },
@@ -174,6 +175,7 @@
                 nextMoves: [],
                 isAppleEaten: false,
                 isAnimalEaten: false,
+                isPoisonEaten: false,
                 points: 0,
                 color: "orange",
               },
@@ -603,6 +605,8 @@ methods: {
     this.snake2.isAppleEaten = false;
     this.snake1.isAnimalEaten = false;
     this.snake2.isAnimalEaten = false;
+    this.snake1.isPoisonEaten = false;
+    this.snake2.isPoisonEaten = false;
     this.snake1.points = 0;
     this.snake2.points = 0;
     this.speed = 200;
