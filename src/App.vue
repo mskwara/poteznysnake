@@ -221,9 +221,7 @@
           },
 
           mounted: function(){
-            this.$http.get('scoreboard').then(response => {
-              this.ranking = response.body;
-            });
+            var scoreboardInterval = setInterval(this.getScoreboard(), 5000);
             this.sleep(3);
             window.addEventListener("keyup", e => {
               if(e.keyCode == 80 && this.saving == false){  //left
@@ -260,6 +258,11 @@
 
           },
 methods: {
+  getScoreboard(){
+    this.$http.get('scoreboard').then(response => {
+      this.ranking = response.body;
+    });
+  },
   setAnimalImage(){
     if(this.animal.value/15 <= 8){
       return this.animal.value/15;
@@ -287,9 +290,7 @@ methods: {
     this.user.name = "";
     this.user.score = 0;
     this.user.mode = "";
-    this.$http.get('scoreboard').then(response => {
-      this.ranking = response.body;
-    });
+    this.getScoreboard();
   },
   changeMode(){
     if(this.gameMode == "coop"){
