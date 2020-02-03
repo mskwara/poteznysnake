@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">{{pauseText}}</h6>
     <div class="mainView">
 
       <div class="scores">
@@ -9,7 +10,7 @@
       </div>
       <div id="map" v-bind:style="setMap()">
         <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
-        <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">PAUSE</h6>
+
         <div :class="snakeClass(part.id, snake1)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
         <div v-if="gameMode != 'single'"><div :class="snakeClass(part.id, snake2)" :key="snake2.snakeId+part.id" v-for="part in snake2.parts" v-bind:style="partPosition(part)"></div></div>
         <div class="apple" v-bind:style="applePosition(apple)" v-if="apple.visible == true">
@@ -55,12 +56,28 @@
                   max="16"
                   step="1"
                   v-model="mapSize">
-                </range-slider>{{mapSize}}</span>
+                </range-slider></span>
                 <span>Rozmiar mapy</span>
               </div>
-
-
             </md-list-item>
+
+            <md-list-item>
+              <md-icon class="md-primary">speed</md-icon>
+
+              <div class="md-list-item-text">
+                <span class="sliderSpan">
+                  <range-slider
+                    class="slider"
+                    :disabled="alive"
+                    min="-100"
+                    max="70"
+                    step="10"
+                    v-model="speedFactor">
+                  </range-slider></span>
+                  <span>Prędkość</span>
+                </div>
+              </md-list-item>
+
             <md-list-item>
               <md-icon class="md-primary">cached</md-icon>
 
@@ -70,6 +87,12 @@
 
               <md-button class="md-primary md-raised" @click="reset()">Restart</md-button>
             </md-list-item>
+
+            <md-list-item>
+              <md-icon class="md-primary">help_outline</md-icon>
+              <md-button class="md-primary md-raised btnHelp" @click="help = true">Pomoc</md-button>
+            </md-list-item>
+
             <md-list-item>
               <md-icon class="md-primary">fingerprint</md-icon>
 
@@ -81,6 +104,34 @@
 
           </md-list>
         </div>
+
+        <md-dialog :md-active.sync="help">
+          <md-dialog-title>Pomoc</md-dialog-title>
+
+          <md-tabs md-dynamic-height>
+            <md-tab md-label="Tryby">
+              <p>Gra umożliwia wybór trzech trybów rozgrywki. Są to tzw. SINGLE, w którym twoim celem jest zjedzenie jak największej ilości jabłek. Zbieraj punkty i staraj się nie zjeść własnego ogona!</p>
+              <p>Kolejnym trybem jest COOP - współpracuj ze znajomym by uzyskać jak najwyższy wynik. Tylko rozsądnie dobrana taktyka zapewni Ci pierwsze miejsce w tabeli!</p>
+              <p>Ostatni tryb to BATTLE, którego wynik nie jest zapisywany do tablicy wyników. Zmierz się ze swoim znajomym w emocjonującej rozgrywce. To umiejętności zdecydują kto zasługuje na wygraną!</p>
+            </md-tab>
+
+            <md-tab md-label="Dodatki">
+              <p>Poza jabłkami na planszy możesz spotkać jeszcze parę niespodzianek. Jedną z nich jest zwierzątko. Jest ono warte więcej punktów niż zwykłe jabłko, a każde kolejne jest smaczniejsze niż poprzednie. Staraj się żadnego nie przeoczyć!</p>
+              <p>Jeżeli na swojej drodze zobaczysz truciznę, omijaj ją szerokim łukiem. Ma negatywny wpływ na węża oraz na twoją ambicję zajęcia pierwszego miejsca w tabeli!</p>
+            </md-tab>
+
+            <md-tab md-label="Ustawienia">
+              <p>Zdobycie najlepszego wyniku nie należy do najproszych. Wymaga skupienia i poświęcenia czasu na rozgrywkę. Możesz jednak zwiększyć swoje osiągi poprzez podkręcenie prędkości węża lub zmianę wielkości mapy.</p>
+              <p>Wybierz najlepsze według Ciebie ustawienia i rozpocznij rozgrywkę!</p>
+            </md-tab>
+          </md-tabs>
+
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="help = false">Zamknij</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+
+
       </div>
 
       <md-dialog-confirm
@@ -92,172 +143,179 @@
         @md-confirm="reset"
         @md-cancel="wannaSave()" />
 
-        <md-snackbar :md-duration="duration" :md-active.sync="snackbarError" md-persistent>
-          Zdobądź więcej punktów lub zmień tryb gry!
-        </md-snackbar>
+      <md-snackbar :md-duration="duration" :md-active.sync="snackbarError" md-persistent>
+        Zdobądź więcej punktów lub zmień tryb gry!
+      </md-snackbar>
 
-        <md-dialog-confirm
-          :md-active.sync="victory"
-          md-title="WYGRAŁEŚ"
-          md-content="Jesteś mistrzem tej gry! Gratulacje!"
-          md-confirm-text="Jeszcze raz"
-          md-cancel-text="Chcę zapisać wynik"
-          @md-confirm="reset"
-          @md-cancel="wannaSave()" />
+      <md-dialog-confirm
+        :md-active.sync="victory"
+        md-title="WYGRAŁEŚ"
+        md-content="Jesteś mistrzem tej gry! Gratulacje!"
+        md-confirm-text="Jeszcze raz"
+        md-cancel-text="Chcę zapisać wynik"
+        @md-confirm="reset"
+        @md-cancel="wannaSave()" />
 
-          <md-dialog-prompt
-            :md-active.sync="saving"
-            v-model="user.name"
-            md-title="Zapisz swój wynik"
-            md-input-maxlength="15"
-            md-input-placeholder="Podaj swój nick..."
-            md-cancel-text="Powrót"
-            md-confirm-text="Zapisz"
-            @md-confirm="postScore" />
+        <md-dialog-prompt
+          :md-active.sync="saving"
+          v-model="user.name"
+          md-title="Zapisz swój wynik"
+          md-input-maxlength="15"
+          md-input-placeholder="Podaj swój nick..."
+          md-cancel-text="Powrót"
+          md-confirm-text="Zapisz"
+          @md-confirm="postScore" />
 
-          </div>
-        </template>
+        </div>
 
-        <script>
-        import RangeSlider from 'vue-range-slider'
-        import Scoreboard from './Scoreboard.vue'
-        // you probably need to import built-in style
-        import 'vue-range-slider/dist/vue-range-slider.css'
 
-        export default {
-          components: {RangeSlider, Scoreboard},
-          data(){
-            return {
-              SIZE: 40,
-              duration: 3000,
-              ranking: [],
-              snackbarError: false,
-              pause: false,
-              user: {
-                name: "",
-                score: 0,
-                mode: ""
-              },
-              saving: false,
-              snake1: {
-                snakeId: "1",
-                parts: [
-                  {id: 0, x: 4, y: 6},
-                  {id: 1, x: 3, y: 6},
-                  {id: 2, x: 2, y: 6},
-                  {id: 3, x: 1, y: 6},
-                  {id: 4, x: 0, y: 6},
-                ],
-                nextId: 5,
-                direction: "right",
-                snakeLength: 5,
-                alreadyTurned: false,
-                nextMoves: [],
-                isAppleEaten: false,
-                isAnimalEaten: false,
-                isPoisonEaten: false,
-                points: 0,
-                color: "green",
-              },
-              snake2: {
-                snakeId: "2",
-                parts: [
-                  {id: 0, x: 4, y: 2},
-                  {id: 1, x: 3, y: 2},
-                  {id: 2, x: 2, y: 2},
-                  {id: 3, x: 1, y: 2},
-                  {id: 4, x: 0, y: 2},
-                ],
-                nextId: 5,
-                direction: "right",
-                snakeLength: 5,
-                alreadyTurned: false,
-                nextMoves: [],
-                isAppleEaten: false,
-                isAnimalEaten: false,
-                isPoisonEaten: false,
-                points: 0,
-                color: "orange",
-              },
-              gameMode: "single",
-              alive: false,
-              speed: 200,
-              mapSize: 10,
-              apple: {
-                x: 8,
-                y: 8,
-                visible: false
-              },
-              animal: {
-                x: -2,
-                y: -2,
-                value: 0,
-                visible: false,
-                wasDisplayed: false,
-                eaten: false,
-                time: 3,
-                remainingTime: 3,
-              },
-              poison: {
-                x: -3,
-                y: -3,
-                value: 50,
-                visible: false,
-                wasDisplayed: false,
-                eaten: false,
-                time: 5,
-                remainingTime: 5,
-                next: 16,
-              },
-              sleeping: 3,
-              pointsFactor: 1,
-              applesCount: 0,
-              whyDied: "",
-              gameOverAlert: false,
-              alertText: "Koniec gry",
-              victory: false,
-              scoreboard: "",
-            }
-          },
 
-          mounted: function(){
-            this.getScoreboard();
-            setInterval(this.getScoreboard, 5000);
-            this.sleep(3);
-            window.addEventListener("keyup", e => {
-              if(e.keyCode == 80 && this.saving == false){  //left
-                this.pause == false ? this.pause = true : this.pause = false;
-              }
-              if(this.pause == false){
-                if(e.keyCode == 37){  //left
-                  this.turn("left", this.snake1);
-                }
-                if(e.keyCode == 38){  //up
-                  this.turn("up", this.snake1);
-                }
-                if(e.keyCode == 39){  //right
-                  this.turn("right", this.snake1);
-                }
-                if(e.keyCode == 40){  //down
-                  this.turn("down", this.snake1);
-                }
-                //snake2
-                if(e.keyCode == 65){  //left
-                  this.turn("left", this.snake2);
-                }
-                if(e.keyCode == 87){  //up
-                  this.turn("up", this.snake2);
-                }
-                if(e.keyCode == 68){  //right
-                  this.turn("right", this.snake2);
-                }
-                if(e.keyCode == 83){  //down
-                  this.turn("down", this.snake2);
-                }
-              }
-            });
 
-          },
+</template>
+
+<script>
+import RangeSlider from 'vue-range-slider'
+import Scoreboard from './Scoreboard.vue'
+// you probably need to import built-in style
+import 'vue-range-slider/dist/vue-range-slider.css'
+
+export default {
+  components: {RangeSlider, Scoreboard},
+  data(){
+    return {
+      SIZE: 40,
+      duration: 3000,
+      ranking: [],
+      snackbarError: false,
+      pause: false,
+      pauseText: "PAUSE",
+      help: false,
+      user: {
+        name: "",
+        score: 0,
+        mode: ""
+      },
+      saving: false,
+      snake1: {
+        snakeId: "1",
+        parts: [
+          {id: 0, x: 4, y: 6},
+          {id: 1, x: 3, y: 6},
+          {id: 2, x: 2, y: 6},
+          {id: 3, x: 1, y: 6},
+          {id: 4, x: 0, y: 6},
+        ],
+        nextId: 5,
+        direction: "right",
+        snakeLength: 5,
+        alreadyTurned: false,
+        nextMoves: [],
+        isAppleEaten: false,
+        isAnimalEaten: false,
+        isPoisonEaten: false,
+        points: 0,
+        color: "green",
+      },
+      snake2: {
+        snakeId: "2",
+        parts: [
+          {id: 0, x: 4, y: 2},
+          {id: 1, x: 3, y: 2},
+          {id: 2, x: 2, y: 2},
+          {id: 3, x: 1, y: 2},
+          {id: 4, x: 0, y: 2},
+        ],
+        nextId: 5,
+        direction: "right",
+        snakeLength: 5,
+        alreadyTurned: false,
+        nextMoves: [],
+        isAppleEaten: false,
+        isAnimalEaten: false,
+        isPoisonEaten: false,
+        points: 0,
+        color: "orange",
+      },
+      gameMode: "single",
+      alive: false,
+      speed: 200,
+      speedFactor: 0,
+      mapSize: 10,
+      apple: {
+        x: 8,
+        y: 8,
+        visible: false
+      },
+      animal: {
+        x: -2,
+        y: -2,
+        value: 0,
+        visible: false,
+        wasDisplayed: false,
+        eaten: false,
+        time: 3,
+        remainingTime: 3,
+      },
+      poison: {
+        x: -3,
+        y: -3,
+        value: 50,
+        visible: false,
+        wasDisplayed: false,
+        eaten: false,
+        time: 5,
+        remainingTime: 5,
+        next: 16,
+      },
+      sleeping: 3,
+      pointsFactor: 1,
+      applesCount: 0,
+      whyDied: "",
+      gameOverAlert: false,
+      alertText: "Koniec gry",
+      victory: false,
+      scoreboard: "",
+    }
+  },
+
+  mounted: function(){
+    this.getScoreboard();
+    setInterval(this.getScoreboard, 5000);
+    this.sleep(3);
+    window.addEventListener("keyup", e => {
+      if(e.keyCode == 80 && this.saving == false){  //p
+        this.pause == false ? this.pause = true : this.pause = false;
+      }
+      if(this.pause == false){
+        if(e.keyCode == 37){  //left
+          this.turn("left", this.snake1);
+        }
+        if(e.keyCode == 38){  //up
+          this.turn("up", this.snake1);
+        }
+        if(e.keyCode == 39){  //right
+          this.turn("right", this.snake1);
+        }
+        if(e.keyCode == 40){  //down
+          this.turn("down", this.snake1);
+        }
+        //snake2
+        if(e.keyCode == 65){  //left
+          this.turn("left", this.snake2);
+        }
+        if(e.keyCode == 87){  //up
+          this.turn("up", this.snake2);
+        }
+        if(e.keyCode == 68){  //right
+          this.turn("right", this.snake2);
+        }
+        if(e.keyCode == 83){  //down
+          this.turn("down", this.snake2);
+        }
+      }
+    });
+
+  },
 methods: {
   getScoreboard(){
     this.$http.get('scoreboard').then(response => {
@@ -409,6 +467,7 @@ methods: {
         this.victory = true;
         this.alive = false;
       }
+      this.invertSnake(snake);
     }
   },
   update(){
@@ -650,6 +709,9 @@ methods: {
     if(this.mapSize <= 11)  this.animal.time = 3;
     if(this.mapSize >= 12 && this.mapSize <= 15)  this.animal.time = 4;
     if(this.mapSize >= 16)  this.animal.time = 5;
+    if(this.speedFactor >= 50){
+      this.animal.time -= 1;
+    }
   },
   putApple(obj){
     var foundPlaceForApple = false;
@@ -705,6 +767,40 @@ methods: {
     }
 
   },
+  invertSnake(snake){
+    this.pause = true;
+    this.pauseText = "";
+    for(var i = 0 ; i < snake.snakeLength/2 ; i++){  //zamiana części węża żeby szedł w druga strone
+      var x1 = snake.parts[i].x;
+      var y1 = snake.parts[i].y;
+      snake.parts[i].x = snake.parts[snake.snakeLength-1-i].x;
+      snake.parts[i].y = snake.parts[snake.snakeLength-1-i].y;
+      snake.parts[snake.snakeLength-1-i].x = x1;
+      snake.parts[snake.snakeLength-1-i].y = y1;
+    }
+    snake.alreadyTurned = false;
+    snake.nextMoves = [];
+    if(snake.parts[0].x == snake.parts[1].x){ //góra - dół
+      if(snake.parts[0].y < snake.parts[1].y){
+        snake.direction = "up";
+      }
+      else {
+        snake.direction = "down";
+      }
+    }
+    else if(snake.parts[0].y == snake.parts[1].y){ //lewo-prawo
+      if(snake.parts[0].x < snake.parts[1].x){
+        snake.direction = "left";
+      }
+      else {
+        snake.direction = "right";
+      }
+    }
+    setTimeout(()=>{
+      this.pause = false;
+      this.pauseText = "PAUSE";
+    }, 1000);
+  },
   sleep(sec){
     this.sleeping = sec;
     if(this.sleeping > 0){
@@ -718,6 +814,10 @@ methods: {
       this.poison.next = Math.floor(Math.random() * (25 - 14 + 1) ) + 14;
       this.alive = true;
       this.putApple("apple");
+      this.speed -= this.speedFactor;
+      if(this.speedFactor > 0){
+        this.pointsFactor += this.speedFactor/100;
+      }
       this.update();
     }
   },
@@ -813,6 +913,7 @@ p {
 }
 .range-slider-knob {
   width: 20px !important;
+  background-color: #63bd4a;
 }
 .scores {
   width: 450px;
@@ -837,5 +938,12 @@ p {
   top: 0px;
   font-size: 7pt;
   font-family: Sui Generis;
+}
+.md-tab p {
+  font-family: Calibri;
+}
+.btnHelp {
+  background-color: #e945ff !important;
+  width: 100%;
 }
 </style>
