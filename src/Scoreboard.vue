@@ -8,7 +8,7 @@
       <md-table-row slot="md-table-row" slot-scope="{ item }">
         <md-table-cell md-label="Name" md-sort-by="name">{{ item.name }}</md-table-cell>
         <md-table-cell md-label="Score" md-sort-by="score">{{ item.score }}</md-table-cell>
-        <md-table-cell md-label="Mode" md-sort-by="score" style="text-transform: uppercase">{{ item.mode }}</md-table-cell>
+        <md-table-cell md-label="Mode" md-sort-by="mode" style="text-transform: uppercase">{{ item.mode }}</md-table-cell>
       </md-table-row>
     </md-table>
   </div>
