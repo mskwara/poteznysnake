@@ -222,7 +222,7 @@
 
           mounted: function(){
             this.getScoreboard();
-            setInterval(this.getScoreboard(), 5000);
+            setInterval(this.getScoreboard, 5000);
             this.sleep(3);
             window.addEventListener("keyup", e => {
               if(e.keyCode == 80 && this.saving == false){  //left
