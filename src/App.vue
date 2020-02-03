@@ -164,7 +164,8 @@
           md-input-placeholder="Podaj swój nick..."
           md-cancel-text="Powrót"
           md-confirm-text="Zapisz"
-          @md-confirm="postScore" />
+          @md-confirm="postScore"
+          @md-cancel="clearName" />
 
         </div>
 
@@ -317,6 +318,9 @@ export default {
 
   },
 methods: {
+  clearName(){
+    this.user.name = "";
+  },
   getScoreboard(){
     this.$http.get('scoreboard').then(response => {
       this.ranking = response.body;
