@@ -695,7 +695,7 @@ methods: {
 
     this.poison.x = -3,
     this.poison.y = -3,
-    this.poison.value = 150,
+    this.poison.value = 50,
     this.poison.visible = false,
     this.poison.wasDisplayed = false,
     this.poison.eaten = false,
