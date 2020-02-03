@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">{{pauseText}}</h6>
     <div class="mainView">
 
       <div class="scores">
@@ -9,6 +8,7 @@
         <scoreboard :list="ranking"></scoreboard>
       </div>
       <div id="map" v-bind:style="setMap()">
+        <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">{{pauseText}}</h6>
         <p class="sleepTimer" v-if="sleeping > 0">{{sleeping}}</p>
 
         <div :class="snakeClass(part.id, snake1)" :key="snake1.snakeId+part.id" v-for="part in snake1.parts" v-bind:style="partPosition(part)"></div>
