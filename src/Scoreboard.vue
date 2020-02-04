@@ -11,6 +11,7 @@
       <md-table-row slot="md-table-row" slot-scope="{ item }">
         <md-table-cell md-label="Name">{{ item.name }}</md-table-cell>
         <md-table-cell md-label="Score">{{ item.score }}</md-table-cell>
+        <md-table-cell md-label="Time">{{ item.time }}</md-table-cell>
         <md-table-cell md-label="Mode" style="text-transform: uppercase">{{ item.mode }}</md-table-cell>
       </md-table-row>
     </md-table>
@@ -22,7 +23,6 @@
     data(){
       return {
         mode: "single",
-        oneModeList: [],
       }
     },
     props: ['list'],
@@ -41,6 +41,10 @@
 </script>
 
 <style>
+.md-table {
+  margin-left: 0;
+  width: 480px;
+}
 .md-table-cell {
   text-align: left;
 }

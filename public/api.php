@@ -21,13 +21,16 @@ $app->get(
             die("Connection failed: " . $conn->connect_error);
         }
 
-        $sql = "SELECT id, name, score, mode FROM scoreboard WHERE mode=\"single\" ORDER BY score DESC LIMIT 10";
+        $sql = "SELECT id, name, score, time, mode FROM scoreboard WHERE mode=\"single\" ORDER BY score DESC LIMIT 10";
         $result = $conn->query($sql);
         $array = [];
 
         if ($result->num_rows > 0) {
             // output data of each row
             while($row = $result->fetch_assoc()) {
+              if($row['time']==null){
+                $row['time'] = "-";
+              }
                 $array[] = $row;
             }
         } else {
@@ -52,7 +55,7 @@ $app->get(
             die("Connection failed: " . $conn->connect_error);
         }
 
-        $sql = "SELECT id, name, score, mode FROM scoreboard WHERE mode=\"coop\" ORDER BY score DESC LIMIT 10";
+        $sql = "SELECT id, name, score, time, mode FROM scoreboard WHERE mode=\"coop\" ORDER BY score DESC LIMIT 10";
         $result = $conn->query($sql);
         $array = [];
 
@@ -86,7 +89,7 @@ $app->post(
           die("Connection failed: " . $conn->connect_error);
       }
 
-      $sql = "INSERT INTO scoreboard (name, score, mode) VALUES('$requestData[name]', '$requestData[score]', '$requestData[mode]')";
+      $sql = "INSERT INTO scoreboard (name, score, mode, time) VALUES('$requestData[name]', '$requestData[score]', '$requestData[mode]', '$requestData[time]')";
 
       if ($conn->query($sql) === TRUE) {
           echo "New record created successfully";

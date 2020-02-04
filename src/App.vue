@@ -199,7 +199,8 @@ export default {
       user: {
         name: "",
         score: 0,
-        mode: ""
+        mode: "",
+        time: ""
       },
       saving: false,
       snake1: {
@@ -281,6 +282,8 @@ export default {
       alertText: "Koniec gry",
       victory: false,
       scoreboardMode: "single",
+      playingTime: 0,
+      playingTimeInterval: null,
     }
   },
 
@@ -372,6 +375,7 @@ methods: {
       this.user.score = this.snake1.points + this.snake2.points;
     }
     this.user.mode = this.gameMode;
+    this.user.time = this.changeSecToMin(this.playingTime);
     this.$http.post('addscore', this.user);
     this.user.name = "";
     this.user.score = 0;
@@ -583,7 +587,7 @@ methods: {
     }
   },
   gameOver(){
-    this.alertText = "Koniec gry. Wynik: "+(this.snake1.points+this.snake2.points);
+    this.alertText = "Koniec gry. Wynik: "+(this.snake1.points+this.snake2.points)+". Czas gry: "+this.changeSecToMin(this.playingTime);
     if(this.gameMode == "battle"){
       if(this.snake1.points > this.snake2.points){
         this.alertText+=". Wygrywa gracz 1";
@@ -596,6 +600,7 @@ methods: {
       }
     }
     this.gameOverAlert = true;
+    clearInterval(this.playingTimeInterval);
   },
   move(snake){
     if(snake.isAppleEaten == true || snake.isAnimalEaten == true || snake.isPoisonEaten){
@@ -845,7 +850,30 @@ methods: {
       if(this.speedFactor > 0){
         this.pointsFactor += this.speedFactor/100;
       }
+      this.playingTime = 0;
+      this.playingTimeInterval = setInterval(()=>{
+        if(this.pause == false || (this.pause == true && this.pauseText == "")) this.playingTime+=1;
+      }, 1000);
       this.update();
+    }
+  },
+  changeSecToMin(sec){
+    var min = 0;
+    while(sec >= 60){
+      min += 1;
+      sec -= 60;
+    }
+    if(sec <= 0 && min > 0){
+      return min+"min";
+    }
+    else if(min <= 0 && sec > 0){
+      return sec+"s";
+    }
+    else if(min > 0 && sec > 0){
+      return min+"min "+sec+"s";
+    }
+    else {
+      return "...";
     }
   },
 }
@@ -944,7 +972,7 @@ p {
 }
 .scores {
   width: 450px;
-  margin-left: 20px;
+  margin-left: 0px;
 }
 .copyright {
   color: grey;
