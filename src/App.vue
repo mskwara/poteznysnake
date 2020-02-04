@@ -292,7 +292,7 @@ export default {
       if(e.keyCode == 80 && this.saving == false){  //p
         this.pause == false ? this.pause = true : this.pause = false;
       }
-      if(this.pause == false){
+      if(this.pause == false || (this.pause == true && this.pauseText == "")){
         if(e.keyCode == 37){  //left
           this.turn("left", this.snake1);
         }
