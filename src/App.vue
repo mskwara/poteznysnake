@@ -5,7 +5,7 @@
       <div class="scores">
         <p v-if="gameMode == 'coop' || gameMode == 'single'" style="margin-left:20px">Liczba punktów: {{snake1.points+snake2.points}}</p>
         <p v-if="gameMode == 'battle'" style="margin-left:20px">Gracz 1: {{snake1.points}} punktów<br><br>Gracz 2: {{snake2.points}} punktów</p>
-        <scoreboard :list="ranking"></scoreboard>
+        <scoreboard :list="ranking" @switching="switchScoreboardMode($event)"></scoreboard>
       </div>
       <div id="map" v-bind:style="setMap()">
         <h6 class="pause" v-if="pause == true" :style="'left: '+(this.mapSize/2-1)*this.SIZE+'px'">{{pauseText}}</h6>
@@ -110,19 +110,24 @@
 
           <md-tabs md-dynamic-height>
             <md-tab md-label="Tryby">
-              <p>Gra umożliwia wybór trzech trybów rozgrywki. Są to tzw. SINGLE, w którym twoim celem jest zjedzenie jak największej ilości jabłek. Zbieraj punkty i staraj się nie zjeść własnego ogona!</p>
-              <p>Kolejnym trybem jest COOP - współpracuj ze znajomym by uzyskać jak najwyższy wynik. Tylko rozsądnie dobrana taktyka zapewni Ci pierwsze miejsce w tabeli!</p>
-              <p>Ostatni tryb to BATTLE, którego wynik nie jest zapisywany do tablicy wyników. Zmierz się ze swoim znajomym w emocjonującej rozgrywce. To umiejętności zdecydują kto zasługuje na wygraną!</p>
+              <p>Gra umożliwia wybór trzech trybów rozgrywki. Jednym z nich jest tzw. <b>SINGLE</b>, w którym twoim celem jest zjedzenie jak <b>największej ilości jabłek</b>. Zbieraj punkty i staraj się nie zjeść własnego ogona!</p>
+              <p>Kolejnym trybem jest <b>COOP</b> - współpracuj ze znajomym by uzyskać jak najwyższy wynik. Tylko <b>rozsądnie dobrana taktyka</b> zapewni Ci pierwsze miejsce w tabeli!</p>
+              <p>Ostatni tryb to <b>BATTLE</b>, którego wynik nie jest zapisywany do tablicy wyników. Zmierz się ze swoim znajomym w <b>emocjonującej rozgrywce</b>. To umiejętności zdecydują kto zasługuje na wygraną!</p>
             </md-tab>
 
             <md-tab md-label="Dodatki">
-              <p>Poza jabłkami na planszy możesz spotkać jeszcze parę niespodzianek. Jedną z nich jest zwierzątko. Jest ono warte więcej punktów niż zwykłe jabłko, a każde kolejne jest smaczniejsze niż poprzednie. Staraj się żadnego nie przeoczyć!</p>
-              <p>Jeżeli na swojej drodze zobaczysz truciznę, omijaj ją szerokim łukiem. Ma negatywny wpływ na węża oraz na twoją ambicję zajęcia pierwszego miejsca w tabeli!</p>
+              <p>Poza jabłkami na planszy możesz spotkać jeszcze parę <b>niespodzianek</b>. Jedną z nich jest <b>zwierzątko</b>. Jest ono warte więcej punktów niż zwykłe jabłko, a każde kolejne jest smaczniejsze niż poprzednie. Staraj się żadnego nie przeoczyć!</p>
+              <p>Jeżeli na swojej drodze zobaczysz <b>truciznę</b>, omijaj ją szerokim łukiem. Ma negatywny wpływ na węża oraz na twoją ambicję zajęcia pierwszego miejsca w tabeli!</p>
             </md-tab>
 
             <md-tab md-label="Ustawienia">
-              <p>Zdobycie najlepszego wyniku nie należy do najproszych. Wymaga skupienia i poświęcenia czasu na rozgrywkę. Możesz jednak zwiększyć swoje osiągi poprzez podkręcenie prędkości węża lub zmianę wielkości mapy.</p>
-              <p>Wybierz najlepsze według Ciebie ustawienia i rozpocznij rozgrywkę!</p>
+              <p>Zdobycie najlepszego wyniku nie należy do najproszych. Wymaga <b>skupienia</b> i <b>poświęcenia czasu na rozgrywkę</b>. Możesz jednak zwiększyć swoje osiągi poprzez podkręcenie <b>prędkości</b> węża lub zmianę <b>wielkości mapy</b>.</p>
+              <p>Wybierz najlepsze według Ciebie ustawienia i <b>rozpocznij rozgrywkę!</b></p>
+            </md-tab>
+
+            <md-tab md-label="Sterowanie">
+              <p>W trybie <b>SINGLE</b> sterowanie odbywa się za pomocą <b>strzałek</b>. Jeżeli włączysz tryb dla dwóch graczy, <b>drugim wężem</b> można sterować za pomocą klawiszy <b>WASD</b>.</p>
+              <p>Jeżeli w trakcie rozgrywki chcesz zrobić sobie <b>przerwę</b> - nie ma problemu! Po prostu wciśnij <b>klawisz P</b>, aby zapauzować bieżącą grę.</p>
             </md-tab>
           </md-tabs>
 
@@ -156,18 +161,18 @@
         @md-confirm="reset"
         @md-cancel="wannaSave()" />
 
-        <md-dialog-prompt
-          :md-active.sync="saving"
-          v-model="user.name"
-          md-title="Zapisz swój wynik"
-          md-input-maxlength="15"
-          md-input-placeholder="Podaj swój nick..."
-          md-cancel-text="Powrót"
-          md-confirm-text="Zapisz"
-          @md-confirm="postScore"
-          @md-cancel="clearName" />
+      <md-dialog-prompt
+        :md-active.sync="saving"
+        v-model="user.name"
+        md-title="Zapisz swój wynik"
+        md-input-maxlength="15"
+        md-input-placeholder="Podaj swój nick..."
+        md-cancel-text="Powrót"
+        md-confirm-text="Zapisz"
+        @md-confirm="postScore"
+        @md-cancel="clearName" />
 
-        </div>
+    </div>
 
 
 
@@ -275,7 +280,7 @@ export default {
       gameOverAlert: false,
       alertText: "Koniec gry",
       victory: false,
-      scoreboard: "",
+      scoreboardMode: "single",
     }
   },
 
@@ -321,10 +326,28 @@ methods: {
   clearName(){
     this.user.name = "";
   },
+  switchScoreboardMode(newMode){
+    if(newMode == "single"){
+      this.scoreboardMode = "single";
+    }
+    else if(newMode == "coop"){
+      this.scoreboardMode = "coop";
+    }
+    this.getScoreboard();
+  },
   getScoreboard(){
-    this.$http.get('scoreboard').then(response => {
-      this.ranking = response.body;
-    });
+    if(this.scoreboardMode == "single"){
+      this.$http.get('scoreboard/single').then(response => {
+        this.ranking = response.body;
+        if(this.ranking == null)  this.ranking = [];
+      });
+    }
+    else if(this.scoreboardMode == "coop"){
+      this.$http.get('scoreboard/coop').then(response => {
+        this.ranking = response.body;
+        if(this.ranking == null)  this.ranking = [];
+      });
+    }
   },
   setAnimalImage(){
     if(this.animal.value/15 <= 8){
@@ -560,7 +583,7 @@ methods: {
     }
   },
   gameOver(){
-    this.alertText = "Koniec gry. Wynik: "+this.snake1.points;
+    this.alertText = "Koniec gry. Wynik: "+(this.snake1.points+this.snake2.points);
     if(this.gameMode == "battle"){
       if(this.snake1.points > this.snake2.points){
         this.alertText+=". Wygrywa gracz 1";
@@ -944,7 +967,7 @@ p {
   font-family: Sui Generis;
 }
 .md-tab p {
-  font-family: Calibri;
+  font-family: Candara;
 }
 .btnHelp {
   background-color: #e945ff !important;
