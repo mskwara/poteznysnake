@@ -11,7 +11,7 @@ $app->get(
     function (Request $request, Response $response, array $args) {
         $servername = "serwer2001916.home.pl";
         $username = "32213694_scoreboard";
-        $password = "Fell!Dell!=";
+        $password = "passwordscoreboard";
         $dbname = "32213694_scoreboard";
 
         // Create connection
@@ -45,7 +45,7 @@ $app->get(
     function (Request $request, Response $response, array $args) {
         $servername = "serwer2001916.home.pl";
         $username = "32213694_scoreboard";
-        $password = "Fell!Dell!=";
+        $password = "passwordscoreboard";
         $dbname = "32213694_scoreboard";
 
         // Create connection
@@ -78,7 +78,7 @@ $app->post(
 
       $servername = "serwer2001916.home.pl";
       $username = "32213694_scoreboard";
-      $password = "Fell!Dell!=";
+      $password = "passwordscoreboard";
       $dbname = "32213694_scoreboard";
 
       $requestData = $request->getParsedBody();
