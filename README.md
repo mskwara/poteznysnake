@@ -1,5 +1,7 @@
 # poteznysnake
 
+https://sweetsnake.herokuapp.com/
+
 ## Project setup
 ```
 npm install
